@@ -1,4 +1,4 @@
-import { BeltColor } from "@/types/users.types";
+import { BeltColor } from '@renderer/db/member.schema'
 import {
   BELT_CONFIG,
   beltColorToHex,
@@ -13,26 +13,22 @@ import {
   RedBeltStripeContainer,
   Stripe,
   StripeContainer,
-  BJJ_BELT_HEX,
-} from "./belt.component.styled";
+  BJJ_BELT_HEX
+} from './belt.component.styled'
 
 interface BeltIconProps {
-  belt: BeltColor;
-  stripes?: number;
-  scale?: number;
+  belt: BeltColor
+  stripes?: number
+  scale?: number
 }
 
-export const BeltIcon: React.FC<BeltIconProps> = ({
-  belt,
-  stripes = 0,
-  scale = 1,
-}) => {
-  if (belt.startsWith("RED")) {
-    const stripeColor = belt.endsWith("_WHITE")
+export const BeltIcon: React.FC<BeltIconProps> = ({ belt, stripes = 0, scale = 1 }) => {
+  if (belt.startsWith('RED')) {
+    const stripeColor = belt.endsWith('_WHITE')
       ? BJJ_BELT_HEX[BeltColor.WHITE]
-      : belt.endsWith("_BLACK")
-      ? BJJ_BELT_HEX[BeltColor.BLACK]
-      : undefined;
+      : belt.endsWith('_BLACK')
+        ? BJJ_BELT_HEX[BeltColor.BLACK]
+        : undefined
     return (
       <BeltWrapper scale={scale}>
         <BeltBand color={beltColorToHex(belt)} scale={scale}>
@@ -45,17 +41,14 @@ export const BeltIcon: React.FC<BeltIconProps> = ({
           )}
         </BeltBand>
       </BeltWrapper>
-    );
+    )
   }
 
   if (belt === BeltColor.BLACK) {
-    const stripeCount = Math.max(
-      0,
-      Math.min(stripes, BELT_CONFIG.black.maxStripes)
-    );
-    const barColor = getRankBarColor(BeltColor.BLACK)!;
-    const stripeColor = BJJ_BELT_HEX[BeltColor.WHITE];
-    const midline = getBeltMidlineStripe(BeltColor.BLACK);
+    const stripeCount = Math.max(0, Math.min(stripes, BELT_CONFIG.black.maxStripes))
+    const barColor = getRankBarColor(BeltColor.BLACK)!
+    const stripeColor = BJJ_BELT_HEX[BeltColor.WHITE]
+    const midline = getBeltMidlineStripe(BeltColor.BLACK)
 
     return (
       <BeltWrapper scale={scale}>
@@ -68,16 +61,13 @@ export const BeltIcon: React.FC<BeltIconProps> = ({
           </BlackBeltStripeContainer>
         </BeltBand>
       </BeltWrapper>
-    );
+    )
   }
 
-  const stripeCount = Math.max(
-    0,
-    Math.min(stripes, BELT_CONFIG.default.maxStripes)
-  );
-  const barColor = getRankBarColor(belt)!;
+  const stripeCount = Math.max(0, Math.min(stripes, BELT_CONFIG.default.maxStripes))
+  const barColor = getRankBarColor(belt)!
 
-  const midline = getBeltMidlineStripe(belt);
+  const midline = getBeltMidlineStripe(belt)
 
   return (
     <BeltWrapper scale={scale}>
@@ -85,14 +75,10 @@ export const BeltIcon: React.FC<BeltIconProps> = ({
         {midline && <OverlayStripe color={midline} scale={scale} />}
         <StripeContainer color={barColor} scale={scale}>
           {[...Array(stripeCount)].map((_, i) => (
-            <Stripe
-              key={i}
-              color={BJJ_BELT_HEX[BeltColor.WHITE]}
-              scale={scale}
-            />
+            <Stripe key={i} color={BJJ_BELT_HEX[BeltColor.WHITE]} scale={scale} />
           ))}
         </StripeContainer>
       </BeltBand>
     </BeltWrapper>
-  );
-};
+  )
+}

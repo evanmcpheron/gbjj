@@ -4,7 +4,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
   background-image: url('./wavy-lines.svg');
   background-size: cover;
   user-select: none;
@@ -14,7 +13,7 @@ code {
   font-weight: 600;
   padding: 3px 5px;
   border-radius: 2px;
-  background-color: var(--color-background-mute);
+  background-color: #fafafa;
   font-family:
     ui-monospace,
     SFMono-Regular,
@@ -125,7 +124,7 @@ code {
 }
 
 .versions {
-  position: absolute;
+  position: fixed;
   bottom: 30px;
   margin: 0 auto;
   padding: 15px 0;

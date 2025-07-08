@@ -1,11 +1,18 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
+import { app, shell, BrowserWindow, ipcMain, globalShortcut } from 'electron'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { exposeIpcMainRxStorage } from 'rxdb/plugins/electron'
+import { getRxStorageMemory } from 'rxdb/plugins/storage-memory'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+let mainWindow: BrowserWindow
 
 function createWindow(): void {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
     show: false,
@@ -13,6 +20,8 @@ function createWindow(): void {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
+      nodeIntegration: true,
+      contextIsolation: false,
       sandbox: false
     }
   })
@@ -49,15 +58,20 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
-
   createWindow()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  })
+})
+
+app.on('ready', async function () {
+  exposeIpcMainRxStorage({
+    key: 'main-storage',
+    storage: getRxStorageMemory(),
+    ipcMain: ipcMain
   })
 })
 
