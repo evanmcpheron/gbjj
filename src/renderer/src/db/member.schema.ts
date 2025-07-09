@@ -44,6 +44,22 @@ export const beltColorEnum = [
   'RED'
 ] as const
 
+export const promotionSchema = {
+  title: 'promotion schema',
+  version: 0,
+  description: 'Schema for promotion times',
+  primaryKey: 'id',
+  type: 'object',
+  properties: {
+    id: { type: 'string', minLength: 1, maxLength: 255 },
+    promotedAt: { type: 'string', format: 'date-time' },
+    belt: { type: 'string', enum: beltColorEnum },
+    stripes: { type: 'integer', minimum: 0 },
+    userId: { type: 'string', ref: 'users' }
+  },
+  required: ['id', 'promotedAt', 'belt', 'stripes', 'userId']
+}
+
 export const checkinSchema = {
   title: 'checkin schema',
   version: 0,
@@ -54,19 +70,20 @@ export const checkinSchema = {
     id: { type: 'string', minLength: 1, maxLength: 255 },
     checkedAt: { type: 'string', format: 'date-time' },
     belt: { type: 'string', enum: beltColorEnum },
-    stripes: { type: 'integer', minimum: 0 }
+    stripes: { type: 'integer', minimum: 0 },
+    userId: { type: 'string', ref: 'users' }
   },
   required: ['id', 'checkedAt', 'belt', 'stripes']
 }
 
 export const userSchema = {
-  title: 'GreenevilleBJJUser',
+  title: 'user schema',
   version: 0,
   description: 'Represents a Greeneville BJJ club user',
   primaryKey: 'id',
   type: 'object',
   properties: {
-    id: { type: 'string', minLength: 1, maxLength: 255 },
+    id: { type: 'string', minLength: 1, maxLength: 255, primary: true },
     firstName: { type: 'string' },
     lastName: { type: 'string' },
     gender: { type: 'string' },
@@ -74,12 +91,7 @@ export const userSchema = {
     email: { type: 'string', format: 'email' },
     phone: { type: 'string' },
     belt: { type: 'string', enum: beltColorEnum },
-    stripes: { type: 'integer', minimum: 0 },
-    checkins: {
-      type: 'array',
-      items: checkinSchema,
-      default: []
-    }
+    stripes: { type: 'integer', minimum: 0 }
   },
   required: [
     'id',

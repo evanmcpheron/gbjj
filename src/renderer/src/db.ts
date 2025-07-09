@@ -3,7 +3,7 @@ import { RxDBDevModePlugin } from 'rxdb/plugins/dev-mode'
 import { getRxStorageLocalstorage } from 'rxdb/plugins/storage-localstorage'
 import { RxDBMigrationSchemaPlugin } from 'rxdb/plugins/migration-schema'
 import { wrappedValidateAjvStorage } from 'rxdb/plugins/validate-ajv'
-import { checkinSchema, userSchema } from './db/member.schema'
+import { checkinSchema, promotionSchema, userSchema } from './db/member.schema'
 import { RxDBQueryBuilderPlugin } from 'rxdb/plugins/query-builder'
 import { RxDBUpdatePlugin } from 'rxdb/plugins/update'
 
@@ -25,12 +25,17 @@ export const initDb = async () => {
     ignoreDuplicate: true
   })
 
+  // await db.remove()
+
   await db.addCollections({
     user: {
       schema: userSchema
     },
     checkins: {
       schema: checkinSchema
+    },
+    promotion: {
+      schema: promotionSchema
     }
   })
 
