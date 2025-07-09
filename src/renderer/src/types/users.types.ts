@@ -26,6 +26,7 @@ export interface Checkins {
   checkedAt: string
   belt: BeltColor
   stripes: number
+  userId: string
 }
 
 export interface GreenevilleBJJUser {
@@ -38,5 +39,4 @@ export interface GreenevilleBJJUser {
   phone: string
   belt: BeltColor
   stripes: number
-  checkins: Checkins[]
 }

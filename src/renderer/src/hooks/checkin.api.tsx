@@ -69,7 +69,7 @@ export const useCheckinApi = () => {
   )
 
   const createCheckin = useCallback(
-    async (userId: string, checkinData: Omit<Checkins, 'id' | 'checkedAt'>) => {
+    async (userId: string, checkinData: Omit<Checkins, 'id' | 'checkedAt' | 'userId'>) => {
       setIsLoading(true)
       try {
         if (!apiUser) return
@@ -80,7 +80,8 @@ export const useCheckinApi = () => {
           id: uuid(),
           checkedAt: new Date().toISOString(),
           belt: checkinData.belt,
-          stripes: checkinData.stripes
+          stripes: checkinData.stripes,
+          userId
         }
 
         // Merge in the new checkin and overwrite the whole doc:
@@ -98,7 +99,7 @@ export const useCheckinApi = () => {
     [apiUser]
   )
   const manualCreateCheckin = useCallback(
-    async (userId: string, checkinData: Omit<Checkins, 'id'>) => {
+    async (userId: string, checkinData: Omit<Checkins, 'id' | 'userId'>) => {
       setIsLoading(true)
       try {
         if (!apiUser) return
@@ -109,7 +110,8 @@ export const useCheckinApi = () => {
           id: uuid(),
           checkedAt: checkinData.checkedAt,
           belt: checkinData.belt,
-          stripes: checkinData.stripes
+          stripes: checkinData.stripes,
+          userId
         }
 
         // Merge in the new checkin and overwrite the whole doc:
@@ -175,11 +177,11 @@ export const useCheckinApi = () => {
     async (userId: string): Promise<Checkins[]> => {
       setIsLoading(true)
       try {
-        if (!apiUser) return []
-        const userDoc = await apiUser.findOne(userId).exec()
-        if (!userDoc) return []
+        if (!apiCheckin) return []
+        const checkinDoc = await apiCheckin.find().where('userId').eq(userId).exec()
+        if (!checkinDoc) return []
         const { start, end } = getMonthRange(new Date())
-        return userDoc.checkins.filter((c) => {
+        return checkinDoc.filter((c) => {
           const t = Date.parse(c.checkedAt)
           return t >= start.getTime() && t <= end.getTime()
         })
@@ -197,15 +199,14 @@ export const useCheckinApi = () => {
     async (userId: string, fromIso?: string, toIso?: string): Promise<Checkins[]> => {
       setIsLoading(true)
       try {
-        if (!apiUser) return []
-        const userDoc = await apiUser.findOne(userId).exec()
-        if (!userDoc) return []
+        if (!apiCheckin) return []
+        const checkinDoc = await apiCheckin.find().where('userId').eq(userId).exec()
+        if (!checkinDoc) return []
 
-        // parse cutoff timestamps if provided
         const fromTs = fromIso ? Date.parse(fromIso) : Number.NEGATIVE_INFINITY
         const toTs = toIso ? Date.parse(toIso) : Number.POSITIVE_INFINITY
 
-        return userDoc.checkins.filter((c) => {
+        return checkinDoc.filter((c) => {
           const t = Date.parse(c.checkedAt)
           return t >= fromTs && t <= toTs
         })
@@ -223,13 +224,13 @@ export const useCheckinApi = () => {
     async (userId: string): Promise<Checkins[]> => {
       setIsLoading(true)
       try {
-        if (!apiUser) return []
-        const userDoc = await apiUser.findOne(userId).exec()
-        if (!userDoc) return []
+        if (!apiCheckin) return []
+        const checkinDoc = await apiCheckin.find().where('userId').eq(userId).exec()
+        if (!checkinDoc) return []
         const now = new Date()
         const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
         const { start, end } = getMonthRange(lastMonth)
-        return userDoc.checkins.filter((c) => {
+        return checkinDoc.filter((c) => {
           const t = Date.parse(c.checkedAt)
           return t >= start.getTime() && t <= end.getTime()
         })
@@ -247,10 +248,10 @@ export const useCheckinApi = () => {
     async (userId: string, belt: BeltColor, stripes: number): Promise<Checkins[]> => {
       setIsLoading(true)
       try {
-        if (!apiUser) return []
-        const userDoc = await apiUser.findOne(userId).exec()
-        if (!userDoc) return []
-        return userDoc.checkins.filter((c) => c.belt === belt && c.stripes === stripes)
+        if (!apiCheckin) return []
+        const checkinDoc = await apiCheckin.find().where('userId').eq(userId).exec()
+        if (!checkinDoc) return []
+        return checkinDoc.filter((c) => c.belt === belt && c.stripes === stripes)
       } catch (err) {
         console.error(err)
         return []
@@ -265,13 +266,14 @@ export const useCheckinApi = () => {
     async (userId: string): Promise<number> => {
       setIsLoading(true)
       try {
-        if (!apiUser) return 0
-        const userDoc = await apiUser.findOne(userId).exec()
-        if (!userDoc || !userDoc.checkins.length) {
+        if (!apiCheckin) return 0
+        const checkinDoc = await apiCheckin.find().where('userId').eq(userId).exec()
+        if (!checkinDoc) return 0
+        if (!checkinDoc || !checkinDoc.length) {
           return 0
         }
 
-        const lastTs = userDoc.checkins
+        const lastTs = checkinDoc
           .map((c) => Date.parse(c.checkedAt))
           .reduce((a, b) => Math.max(a, b), 0)
         const now = Date.now()

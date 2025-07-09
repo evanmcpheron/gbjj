@@ -51,8 +51,7 @@ const NewMembersView: React.FC = () => {
       gender: formData.gender,
       birthday: formData.birthday.toISOString(),
       belt: formData.belt,
-      stripes: formData.stripes,
-      checkins: []
+      stripes: formData.stripes
     }).then(() => {
       navigate('/members')
     })

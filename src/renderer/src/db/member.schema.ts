@@ -83,7 +83,7 @@ export const userSchema = {
   primaryKey: 'id',
   type: 'object',
   properties: {
-    id: { type: 'string', minLength: 1, maxLength: 255, primary: true },
+    id: { type: 'string', minLength: 1, maxLength: 255 },
     firstName: { type: 'string' },
     lastName: { type: 'string' },
     gender: { type: 'string' },
@@ -102,7 +102,6 @@ export const userSchema = {
     'email',
     'phone',
     'belt',
-    'stripes',
-    'checkins'
+    'stripes'
   ]
 }
