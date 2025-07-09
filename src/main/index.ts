@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, globalShortcut } from 'electron'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -59,6 +59,7 @@ app.whenReady().then(() => {
   })
 
   createWindow()
+  mainWindow.webContents.openDevTools()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

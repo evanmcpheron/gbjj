@@ -30,7 +30,7 @@ export const BJJ_BELT_HEX_CHILD: BeltColor[] = [
 
 export const BJJ_BELT_HEX = BJJ_BELT_HEX_ADULT.concat(BJJ_BELT_HEX_CHILD)
 
-export const isAdult = (input: Date): BeltColor[] => {
+export const adultOrChildBelt = (input: Date): BeltColor[] => {
   // Normalize to JS Date
   const birthDate = input
   const today = new Date()
@@ -81,7 +81,7 @@ export const AllBeltsDisplay: React.FC<AllBeltsDisplayProps> = ({ birthday, scal
   }
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-      {(isAdult(birthday) ? BJJ_BELT_HEX_ADULT : BJJ_BELT_HEX_CHILD).map((belt) => (
+      {(adultOrChildBelt(birthday) ? BJJ_BELT_HEX_ADULT : BJJ_BELT_HEX_CHILD).map((belt) => (
         <BeltIcon key={belt} belt={belt} stripes={6} scale={scale} />
       ))}
     </div>

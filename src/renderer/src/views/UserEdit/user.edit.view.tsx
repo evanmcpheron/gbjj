@@ -28,7 +28,7 @@ import { useCheckinApi } from '@renderer/hooks/checkin.api'
 import { useEffect, useState } from 'react'
 import { useUserApi } from '@renderer/hooks/user.api'
 import { BeltColor, Checkins, GreenevilleBJJUser } from '@renderer/types/users.types'
-import { isAdult } from '@renderer/components/belt/all.belts.component'
+import { adultOrChildBelt } from '@renderer/components/belt/all.belts.component'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
 import dayjs from 'dayjs'
 import { UserCheckinTable } from '../Checkin/components/user.checkin.table'
@@ -204,7 +204,7 @@ export const UserEdit = () => {
                 value={belt}
                 onChange={(e) => setBelt(e.target.value as BeltColor)}
               >
-                {isAdult(dayjs(formData.birthday).toDate()).map((b) => (
+                {adultOrChildBelt(dayjs(formData.birthday).toDate()).map((b) => (
                   <MenuItem key={b} value={b}>
                     <BeltIcon belt={b} /> {b}
                   </MenuItem>
@@ -285,7 +285,17 @@ export const UserEdit = () => {
               Manual Checkin
             </Button>
           </Stack>
-
+          <Stack direction="row" width={'100%'} justifyContent={'space-around'} my={4}>
+            <Typography>
+              Classes at Current Rank: <strong>{checkinsAtCurrentRank.length}</strong>
+            </Typography>
+            <Typography>
+              Sessions This Month: <strong>{checkinsThisMonth.length}</strong>
+            </Typography>
+            <Typography>
+              Sessions Last Month: <strong>{checkinsLastMonth.length}</strong>
+            </Typography>
+          </Stack>
           <Stack
             direction={{ xs: 'column', md: 'row' }}
             spacing={2}
@@ -294,18 +304,6 @@ export const UserEdit = () => {
             flexWrap="wrap"
             mb={2}
           >
-            <Stack direction="row" spacing={3}>
-              <Typography>
-                Classes at Current Rank: <strong>{checkinsAtCurrentRank.length}</strong>
-              </Typography>
-              <Typography>
-                Sessions This Month: <strong>{checkinsThisMonth.length}</strong>
-              </Typography>
-              <Typography>
-                Sessions Last Month: <strong>{checkinsLastMonth.length}</strong>
-              </Typography>
-            </Stack>
-
             <Stack direction="row" spacing={2} alignItems="flex-end">
               <Stack spacing={0.5}>
                 <FormLabel>From</FormLabel>
@@ -360,7 +358,7 @@ export const UserEdit = () => {
               label="Belt"
               onChange={(e) => console.log(e.target.value)}
             >
-              {isAdult(dayjs(formData.birthday).toDate()).map((belt, index) => (
+              {adultOrChildBelt(dayjs(formData.birthday).toDate()).map((belt, index) => (
                 <MenuItem key={index} value={belt}>
                   <BeltIcon belt={belt} />
                 </MenuItem>

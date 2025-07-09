@@ -17,12 +17,16 @@ import {
 } from './belt.component.styled'
 
 interface BeltIconProps {
-  belt: BeltColor
+  belt?: BeltColor
   stripes?: number
   scale?: number
 }
 
-export const BeltIcon: React.FC<BeltIconProps> = ({ belt, stripes = 0, scale = 1 }) => {
+export const BeltIcon: React.FC<BeltIconProps> = ({
+  belt = BeltColor.WHITE,
+  stripes = 0,
+  scale = 1
+}) => {
   if (belt.startsWith('RED')) {
     const stripeColor = belt.endsWith('_WHITE')
       ? BJJ_BELT_HEX[BeltColor.WHITE]

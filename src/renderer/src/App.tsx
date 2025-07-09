@@ -11,6 +11,7 @@ import { CheckInUser } from './views/Checkin/checkin.user.view'
 import { DBProvider } from './context/db.context'
 import { UserEdit } from './views/UserEdit/user.edit.view'
 import { QR } from './views/UserEdit/qr.view'
+import { Button } from '@mui/material'
 
 const theme = createTheme({
   colorSchemes: {
@@ -183,6 +184,12 @@ const App = () => {
     <DBProvider>
       <ThemeProvider theme={theme}>
         <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <Button
+            onClick={() => setShowMenu((prev) => !prev)}
+            sx={{ position: 'fixed', top: 10, right: 10 }}
+          >
+            MENU
+          </Button>
           <Menu showMenu={showMenu} onClose={setShowMenu} />
           <Router>
             <Routes>

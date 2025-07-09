@@ -16,7 +16,7 @@ import {
   Typography
 } from '@mui/material'
 import { DatePicker } from '@mui/x-date-pickers'
-import { isAdult } from '@renderer/components/belt/all.belts.component'
+import { adultOrChildBelt } from '@renderer/components/belt/all.belts.component'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
 import { BeltColor } from '@renderer/db/member.schema'
 import { formatPhoneNumber } from '@renderer/helpers/strings.helper'
@@ -149,7 +149,7 @@ const NewMembersView: React.FC = () => {
             label="Belt"
             onChange={handleChange}
           >
-            {isAdult(formData.birthday).map((belt, index) => (
+            {adultOrChildBelt(formData.birthday).map((belt, index) => (
               <MenuItem key={index} value={belt}>
                 <BeltIcon belt={belt} />
               </MenuItem>

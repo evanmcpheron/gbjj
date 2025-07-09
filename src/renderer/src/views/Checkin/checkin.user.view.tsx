@@ -8,82 +8,82 @@ import { useCheckinApi } from '@renderer/hooks/checkin.api'
 import { UserCheckinTable } from './components/user.checkin.table'
 
 export const CheckInUser = () => {
-  const [checkedInToday, setCheckedInToday] = useState(false)
-  const [monthToDateCheckins, setMonthToDateCheckins] = useState(0)
-  const [lastMonthCheckins, setLastMonthCheckins] = useState(0)
-  const [checkinsByRank, setCheckinsByRank] = useState(0)
-  const [nextAvailableTime, setNextAvailableTime] = useState('')
-  const [thisMonthsCheckins, setThisMonthsCheckins] = useState<Checkins[]>([])
-  const [user, setUser] = useState<GreenevilleBJJUser>({
-    id: '1',
-    firstName: 'John',
-    lastName: 'Doe',
-    gender: 'male',
-    birthday: new Date().toISOString(),
-    email: 'bjj@email.com',
-    phone: '123-123-1234',
-    belt: BeltColor.WHITE,
-    stripes: 0,
-    checkins: []
-  })
   const clickedRef = useRef(false)
   const { id } = useParams()
   const navigate = useNavigate()
-
+  const [checkedInToday, setCheckedInToday] = useState(false)
+  const [checkinsThisMonth, setCheckinsThisMonth] = useState<Checkins[]>([])
+  const [checkinsLastMonth, setCheckinsLastMonth] = useState<Checkins[]>([])
+  const [checkinsAtCurrentRank, setCheckinsAtCurrentRank] = useState<Checkins[]>([])
+  const [nextAvailableTime, setNextAvailableTime] = useState('')
+  const [user, setUser] = useState<GreenevilleBJJUser | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const { fetchUserById } = useUserApi()
   const {
-    createCheckin,
     fetchCheckinsThisMonth,
     fetchCheckinsLastMonth,
     fetchCheckinsAtCurrentRank,
     timeUntilNextCheckin,
     getNextCheckinTime,
-    isLoading
+    createCheckin
   } = useCheckinApi()
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!clickedRef.current) {
-        // navigate('/')
-      }
-    }, 5000)
+  const handleCheckIn = async (userToCheckin: GreenevilleBJJUser) => {
+    await createCheckin(userToCheckin.id, {
+      belt: userToCheckin.belt,
+      stripes: userToCheckin.stripes
+    })
+    const nextTime = await getNextCheckinTime(userToCheckin.id)
+    setNextAvailableTime(nextTime)
+    setCheckedInToday(true)
+  }
 
-    const loadData = async () => {
-      if (!id) return
+  const updateCheckin = async () => {
+    if (!id) return
 
-      const response = await fetchUserById(id)
+    const responseUser = await fetchUserById(id)
+    const thisMonth = await fetchCheckinsThisMonth(responseUser.id)
+    const lastMonth = await fetchCheckinsLastMonth(responseUser.id)
+    const rankChecks = await fetchCheckinsAtCurrentRank(
+      responseUser.id,
+      responseUser.belt,
+      responseUser.stripes
+    )
 
-      setUser(response)
-      const thisMonth = await fetchCheckinsThisMonth(id)
-      setThisMonthsCheckins(thisMonth)
-      const lastMonth = await fetchCheckinsLastMonth(id)
-      const rankChecks = await fetchCheckinsAtCurrentRank(id, response.belt, response.stripes)
-      timeUntilNextCheckin(id).then(async (value) => {
+    setUser(responseUser)
+    setCheckinsThisMonth(thisMonth)
+    setCheckinsLastMonth(lastMonth)
+    setCheckinsAtCurrentRank(rankChecks)
+
+    timeUntilNextCheckin(id)
+      .then(async (value) => {
         setCheckedInToday(value > 0)
         if (value > 0) {
           const nextTime = await getNextCheckinTime(id)
           setNextAvailableTime(nextTime)
+        } else {
+          console.log('checking in')
+          handleCheckIn(responseUser)
         }
       })
-      setMonthToDateCheckins(thisMonth.length)
-      setLastMonthCheckins(lastMonth.length)
-      setCheckinsByRank(rankChecks.length)
-    }
-    loadData()
+      .finally(() => {
+        setIsLoading(false)
+      })
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!clickedRef.current) {
+        navigate('/')
+      }
+    }, 6000)
+
     return () => clearTimeout(timer)
   }, [id])
 
-  const handleCheckIn = async () => {
-    await createCheckin(user.id, {
-      belt: user.belt,
-      stripes: user.stripes
-    })
-    const nextTime = await getNextCheckinTime(user.id)
-    setNextAvailableTime(nextTime)
-    setCheckedInToday(true)
-    setCheckinsByRank((prev) => prev + 1)
-    setMonthToDateCheckins((prev) => prev + 1)
-  }
+  useEffect(() => {
+    updateCheckin()
+  }, [isLoading])
 
   if (isLoading) {
     return <div>Loading</div>
@@ -104,7 +104,7 @@ export const CheckInUser = () => {
             Welcome back, {user?.firstName}!
           </Typography>
 
-          <BeltIcon belt={user.belt} stripes={user.stripes} scale={3} />
+          <BeltIcon belt={user?.belt} stripes={user?.stripes} scale={3} />
 
           <Stack
             spacing={1}
@@ -113,27 +113,23 @@ export const CheckInUser = () => {
             sx={{ display: 'flex', justifyContent: 'space-around' }}
           >
             <Typography>
-              Classes at Current Rank: <strong>{checkinsByRank}</strong>
+              Classes at Current Rank: <strong>{checkinsAtCurrentRank.length}</strong>
             </Typography>
             <Typography>
-              Sessions This Month: <strong>{monthToDateCheckins}</strong>
+              Sessions This Month: <strong>{checkinsThisMonth.length}</strong>
             </Typography>
             <Typography>
-              Sessions Last Month: <strong>{lastMonthCheckins}</strong>
+              Sessions Last Month: <strong>{checkinsLastMonth.length}</strong>
             </Typography>
           </Stack>
 
-          {!checkedInToday ? (
-            <Button variant="contained" fullWidth onClick={handleCheckIn}>
-              Check In
-            </Button>
-          ) : (
+          {/* {checkedInToday && (
             <Button variant="contained" fullWidth onClick={() => navigate('/')}>
               Done
             </Button>
-          )}
+          )} */}
 
-          <UserCheckinTable checkins={thisMonthsCheckins} />
+          <UserCheckinTable checkins={checkinsThisMonth} />
         </Stack>
       </Paper>
     </Container>

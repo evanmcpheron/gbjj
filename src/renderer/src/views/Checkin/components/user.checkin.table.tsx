@@ -44,11 +44,13 @@ export const UserCheckinTable = ({ checkins, handleDeleteCheckin }: UserCheckinT
               <TableCell align="left">Date</TableCell>
               <TableCell align="left">Time</TableCell>
               <TableCell align="left">Rank</TableCell>
-              <TableCell align="left">
-                <IconButton onClick={() => console.log('Delete clicked')} color="error">
-                  <DeleteIcon />
-                </IconButton>
-              </TableCell>
+              {!!handleDeleteCheckin && (
+                <TableCell align="left">
+                  <IconButton onClick={() => console.log('Delete clicked')} color="error">
+                    <DeleteIcon />
+                  </IconButton>
+                </TableCell>
+              )}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -66,17 +68,19 @@ export const UserCheckinTable = ({ checkins, handleDeleteCheckin }: UserCheckinT
                   <TableCell align="left">
                     <BeltIcon belt={checkin.belt} stripes={checkin.stripes} />
                   </TableCell>
-                  <TableCell>
-                    <IconButton
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteCheckin?.(checkin.id)
-                      }}
-                      color="error"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
+                  {!!handleDeleteCheckin && (
+                    <TableCell>
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteCheckin?.(checkin.id)
+                        }}
+                        color="error"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  )}
                 </TableRow>
               )
             })}

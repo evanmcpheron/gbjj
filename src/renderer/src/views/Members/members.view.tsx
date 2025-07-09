@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Table,
   TableBody,
@@ -31,6 +31,7 @@ export default function Members() {
   const [selectedMember, setSelectedMember] = useState<GreenevilleBJJUser | null>(null)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [filterMode, setFilterMode] = useState<'all' | 'adult' | 'female' | 'kids'>('all')
   const [filteredUsers, setFilteredUsers] = useState<GreenevilleBJJUser[]>([])
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -41,20 +42,29 @@ export default function Members() {
   }, [selectedMember])
 
   useEffect(() => {
-    let users = [...filteredUsers]
+    let users = [...allUsers]
+
+    if (filterMode === 'adult') {
+      users = users.filter((u) => adultFilter(dayjs(u.birthday).toDate()))
+    } else if (filterMode === 'female') {
+      users = users.filter((u) => u.gender === 'female' && adultFilter(dayjs(u.birthday).toDate()))
+    } else if (filterMode === 'kids') {
+      users = users.filter((u) => !adultFilter(dayjs(u.birthday).toDate()))
+    }
 
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase()
       users = users.filter(
-        (user) =>
-          `${user.firstName} ${user.lastName}`.toLowerCase().includes(term) ||
-          user.email?.toLowerCase().includes(term) ||
-          user.phone?.toLowerCase().includes(term)
+        (u) =>
+          `${u.firstName} ${u.lastName}`.toLowerCase().includes(term) ||
+          u.email.toLowerCase().includes(term) ||
+          u.phone.toLowerCase().includes(term)
       )
     }
 
     setFilteredUsers(users)
-  }, [searchTerm, allUsers])
+    setPage(0)
+  }, [allUsers, filterMode, searchTerm])
 
   useEffect(() => {
     setPage(0)
@@ -77,31 +87,7 @@ export default function Members() {
 
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10))
-    setPage(0) // reset to first page
-  }
-
-  const handleFilter = (filter: string) => {
-    if (filter === 'all') {
-      setFilteredUsers(allUsers)
-    } else if (filter === 'adult') {
-      setFilteredUsers(() =>
-        allUsers.filter((user) => {
-          return adultFilter(dayjs(user.birthday).toDate())
-        })
-      )
-    } else if (filter === 'female') {
-      setFilteredUsers(() =>
-        allUsers.filter((user) => {
-          return user.gender === 'female' && adultFilter(dayjs(user.birthday).toDate())
-        })
-      )
-    } else {
-      setFilteredUsers(() =>
-        allUsers.filter((user) => {
-          return !adultFilter(dayjs(user.birthday).toDate())
-        })
-      )
-    }
+    setPage(0)
   }
 
   if (isLoading) {
@@ -121,7 +107,7 @@ export default function Members() {
               defaultValue="all"
               name="radio-buttons-group"
               onChange={(e) => {
-                handleFilter(e.target.value)
+                setFilterMode(e.target.value as 'all' | 'adult' | 'female' | 'kids')
               }}
             >
               <FormControlLabel value="all" control={<Radio />} label="All" />

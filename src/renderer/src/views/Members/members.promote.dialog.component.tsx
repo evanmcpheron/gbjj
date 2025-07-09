@@ -14,7 +14,7 @@ import {
   Typography,
   MenuItem
 } from '@mui/material'
-import { isAdult } from '@renderer/components/belt/all.belts.component'
+import { adultOrChildBelt } from '@renderer/components/belt/all.belts.component'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
 import { BeltColor } from '@renderer/db/member.schema'
 import { GreenevilleBJJUser } from '@renderer/types/users.types'
@@ -54,7 +54,7 @@ export const EditMemberDialog = ({ open, selectedMember, handleClose }: EditMemb
             label="Belt"
             onChange={(e) => setBelt(e.target.value)}
           >
-            {isAdult(dayjs(selectedMember.birthday).toDate()).map((belt) => (
+            {adultOrChildBelt(dayjs(selectedMember.birthday).toDate()).map((belt) => (
               <MenuItem value={belt}>
                 <BeltIcon belt={belt} />
               </MenuItem>
