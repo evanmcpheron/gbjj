@@ -18,6 +18,7 @@ export const CheckInUser = () => {
     id: '1',
     firstName: 'John',
     lastName: 'Doe',
+    gender: 'male',
     birthday: new Date().toISOString(),
     email: 'bjj@email.com',
     phone: '123-123-1234',
@@ -43,7 +44,7 @@ export const CheckInUser = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!clickedRef.current) {
-        navigate('/')
+        // navigate('/')
       }
     }, 5000)
 
@@ -105,7 +106,12 @@ export const CheckInUser = () => {
 
           <BeltIcon belt={user.belt} stripes={user.stripes} scale={3} />
 
-          <Stack spacing={1} width="100%">
+          <Stack
+            spacing={1}
+            direction="row"
+            width="100%"
+            sx={{ display: 'flex', justifyContent: 'space-around' }}
+          >
             <Typography>
               Classes at Current Rank: <strong>{checkinsByRank}</strong>
             </Typography>
@@ -117,9 +123,15 @@ export const CheckInUser = () => {
             </Typography>
           </Stack>
 
-          <Button variant="contained" fullWidth onClick={() => navigate('/')}>
-            Done
-          </Button>
+          {!checkedInToday ? (
+            <Button variant="contained" fullWidth onClick={handleCheckIn}>
+              Check In
+            </Button>
+          ) : (
+            <Button variant="contained" fullWidth onClick={() => navigate('/')}>
+              Done
+            </Button>
+          )}
 
           <UserCheckinTable checkins={thisMonthsCheckins} />
         </Stack>

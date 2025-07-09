@@ -47,6 +47,23 @@ export const isAdult = (input: Date): BeltColor[] => {
   return age >= 16 ? BJJ_BELT_HEX_ADULT : BJJ_BELT_HEX_CHILD
 }
 
+export const adultFilter = (input: Date): boolean => {
+  // Normalize to JS Date
+  const birthDate = input
+  const today = new Date()
+
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const monthDiff = today.getMonth() - birthDate.getMonth()
+  const dayDiff = today.getDate() - birthDate.getDate()
+
+  // If birth month/day hasn't occurred yet this year, subtract one year
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+    age--
+  }
+
+  return age >= 16
+}
+
 interface AllBeltsDisplayProps {
   birthday: Date | null
   scale?: number

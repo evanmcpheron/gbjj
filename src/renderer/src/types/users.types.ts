@@ -1,5 +1,3 @@
-import { Timestamp } from 'firebase/firestore'
-
 export enum BeltColor {
   WHITE = 'WHITE',
   GREY = 'GREY',
@@ -34,6 +32,7 @@ export interface GreenevilleBJJUser {
   id: string
   firstName: string
   lastName: string
+  gender: string
   birthday: string
   email: string
   phone: string

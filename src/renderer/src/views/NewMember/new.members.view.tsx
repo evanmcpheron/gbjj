@@ -19,6 +19,7 @@ import { DatePicker } from '@mui/x-date-pickers'
 import { isAdult } from '@renderer/components/belt/all.belts.component'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
 import { BeltColor } from '@renderer/db/member.schema'
+import { formatPhoneNumber } from '@renderer/helpers/strings.helper'
 import { useUserApi } from '@renderer/hooks/user.api'
 import { GreenevilleBJJObject } from '@renderer/types/base.types'
 import dayjs from 'dayjs'
@@ -26,11 +27,13 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 const NewMembersView: React.FC = () => {
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     belt: BeltColor.WHITE,
     stripes: 0,
     firstName: '',
     lastName: '',
+    gender: 'male',
     birthday: new Date(),
     email: '',
     phone: ''
@@ -45,30 +48,17 @@ const NewMembersView: React.FC = () => {
       lastName: formData.lastName,
       email: formData.email,
       phone: formData.phone,
+      gender: formData.gender,
       birthday: formData.birthday.toISOString(),
       belt: formData.belt,
       stripes: formData.stripes,
       checkins: []
-    }).then((response) => {
-      console.log(`🚀 ~ new.members.view.tsx:53 ~ handleSubmit ~ response: \n`, response)
+    }).then(() => {
+      navigate('/members')
     })
-    // await postDoc("members", {
-    //   firstName: formData.firstName,
-    //   lastName: formData.lastName,
-    //   email: formData.email,
-    //   phone: formData.phone,
-    //   birthday: formData.birthday,
-    //   belt: formData.belt,
-    //   stripes: formData.stripes,
-    //   checkins: [],
-    // });
-
-    // navigate('/members')
   }
 
   const handleChange = (event: SelectChangeEvent) => {
-    console.log(`🚀 ~ new.members.view.tsx:70 ~ handleChange ~ event: \n`, event)
-
     setFormData((prev) => ({
       ...prev,
       belt: event.target.value as BeltColor
@@ -107,9 +97,14 @@ const NewMembersView: React.FC = () => {
             value={formData.lastName}
             onChange={(e) => setFormData((prev) => ({ ...prev, lastName: e.target.value }))}
           />
-          <RadioGroup defaultValue={'MALE'}>
-            <FormControlLabel value={'MALE'} control={<Radio />} label={'Male'} />
-            <FormControlLabel value={'FEMALE'} control={<Radio />} label={'Female'} />
+          <RadioGroup
+            defaultValue={'male'}
+            onChange={(e) => {
+              setFormData((prev) => ({ ...prev, gender: e.target.value }))
+            }}
+          >
+            <FormControlLabel value={'male'} control={<Radio />} label={'Male'} />
+            <FormControlLabel value={'female'} control={<Radio />} label={'Female'} />
           </RadioGroup>
           <TextField
             label="Email"
@@ -129,7 +124,9 @@ const NewMembersView: React.FC = () => {
             required
             fullWidth
             value={formData.phone}
-            onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, phone: formatPhoneNumber(e.target.value) }))
+            }
           />
           <DatePicker
             sx={{ width: '100%' }}
@@ -152,8 +149,8 @@ const NewMembersView: React.FC = () => {
             label="Belt"
             onChange={handleChange}
           >
-            {isAdult(formData.birthday).map((belt) => (
-              <MenuItem value={belt}>
+            {isAdult(formData.birthday).map((belt, index) => (
+              <MenuItem key={index} value={belt}>
                 <BeltIcon belt={belt} />
               </MenuItem>
             ))}
@@ -173,7 +170,12 @@ const NewMembersView: React.FC = () => {
                   {Array.from(
                     { length: formData.belt === BeltColor.BLACK ? 7 : 5 },
                     (_value, index) => (
-                      <FormControlLabel value={index} control={<Radio />} label={index} />
+                      <FormControlLabel
+                        key={index}
+                        value={index}
+                        control={<Radio />}
+                        label={index}
+                      />
                     )
                   )}
                 </RadioGroup>

@@ -1,5 +1,5 @@
 import { Container, Paper, Typography } from '@mui/material'
-import { QrCheckIn } from './qr.reader.component'
+import { QrCheckIn } from './components/qr.reader.component'
 import { useNavigate } from 'react-router-dom'
 
 const CheckIn: React.FC = () => {

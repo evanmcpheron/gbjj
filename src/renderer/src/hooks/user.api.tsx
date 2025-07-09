@@ -14,8 +14,6 @@ export const useUserApi = () => {
       setIsLoading(true)
       try {
         if (!apiUser) {
-          console.log(`🚀 ~ user.api.tsx:17 ~ apiUser: \n`, apiUser)
-
           setAllUsers([])
           return
         }
@@ -43,7 +41,7 @@ export const useUserApi = () => {
     setIsLoading(true)
     try {
       if (!apiUser) {
-        console.log(`🚀 ~ user.api.tsx:46 ~ apiUser: \n`, apiUser)
+        console.log(`🚀 ~ user.api.tsx:44 ~ apiUser: \n`, apiUser)
 
         setUserLookup(null)
         return
@@ -88,7 +86,9 @@ export const useUserApi = () => {
 
         const doc = await apiUser.findOne(id).exec()
         if (!doc) throw new Error('User not found')
-        await doc.atomicUpdate((old) => ({ ...old, ...updates }))
+        const updatedData = { ...doc.toJSON(), ...updates }
+        await apiUser.upsert(updatedData as any)
+
         return doc.toJSON()
       } finally {
         setIsLoading(false)
@@ -131,4 +131,3 @@ export const useUserApi = () => {
     deleteUser
   }
 }
-

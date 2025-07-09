@@ -97,6 +97,35 @@ export const useCheckinApi = () => {
     },
     [apiUser]
   )
+  const manualCreateCheckin = useCallback(
+    async (userId: string, checkinData: Omit<Checkins, 'id'>) => {
+      setIsLoading(true)
+      try {
+        if (!apiUser) return
+        const userDoc = await apiUser.findOne(userId).exec()
+        if (!userDoc) throw new Error('User not found')
+
+        const newCheckin: Checkins = {
+          id: uuid(),
+          checkedAt: checkinData.checkedAt,
+          belt: checkinData.belt,
+          stripes: checkinData.stripes
+        }
+
+        // Merge in the new checkin and overwrite the whole doc:
+        const updated = {
+          ...userDoc.toJSON(),
+          checkins: [...userDoc.checkins, newCheckin]
+        }
+        await apiUser.upsert(updated)
+
+        return newCheckin
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [apiUser]
+  )
 
   const updateCheckin = useCallback(
     async (id: string, updates: Partial<Checkins>) => {
@@ -117,22 +146,31 @@ export const useCheckinApi = () => {
   )
 
   const deleteCheckin = useCallback(
-    async (id: string) => {
+    async (userId: string, checkinId: string) => {
       setIsLoading(true)
       try {
-        if (!apiCheckin) {
-          return
-        }
-        const doc = await apiCheckin.findOne(id).exec()
-        if (!doc) throw new Error('Checkin not found')
-        await doc.remove()
+        if (!apiUser) return false
+
+        const userDoc = await apiUser.findOne(userId).exec()
+        if (!userDoc) throw new Error('User not found')
+
+        await userDoc.update({
+          $set: {
+            checkins: userDoc.checkins.filter((c) => c.id !== checkinId)
+          }
+        })
+
         return true
+      } catch (error) {
+        console.error('Failed to delete checkin:', error)
+        return false
       } finally {
         setIsLoading(false)
       }
     },
-    [apiCheckin]
+    [apiUser]
   )
+
   const fetchCheckinsThisMonth = useCallback(
     async (userId: string): Promise<Checkins[]> => {
       setIsLoading(true)
@@ -144,6 +182,32 @@ export const useCheckinApi = () => {
         return userDoc.checkins.filter((c) => {
           const t = Date.parse(c.checkedAt)
           return t >= start.getTime() && t <= end.getTime()
+        })
+      } catch (err) {
+        console.error(err)
+        return []
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [apiUser]
+  )
+
+  const fetchCheckinsByUserId = useCallback(
+    async (userId: string, fromIso?: string, toIso?: string): Promise<Checkins[]> => {
+      setIsLoading(true)
+      try {
+        if (!apiUser) return []
+        const userDoc = await apiUser.findOne(userId).exec()
+        if (!userDoc) return []
+
+        // parse cutoff timestamps if provided
+        const fromTs = fromIso ? Date.parse(fromIso) : Number.NEGATIVE_INFINITY
+        const toTs = toIso ? Date.parse(toIso) : Number.POSITIVE_INFINITY
+
+        return userDoc.checkins.filter((c) => {
+          const t = Date.parse(c.checkedAt)
+          return t >= fromTs && t <= toTs
         })
       } catch (err) {
         console.error(err)
@@ -268,12 +332,14 @@ export const useCheckinApi = () => {
     fetchAllCheckins,
     fetchCheckinById,
     createCheckin,
+    manualCreateCheckin,
     updateCheckin,
     deleteCheckin,
     fetchCheckinsThisMonth,
     fetchCheckinsLastMonth,
     fetchCheckinsAtCurrentRank,
     timeUntilNextCheckin,
+    fetchCheckinsByUserId,
     getNextCheckinTime
   }
 }

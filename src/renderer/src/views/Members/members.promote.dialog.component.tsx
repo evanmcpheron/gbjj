@@ -18,19 +18,16 @@ import { isAdult } from '@renderer/components/belt/all.belts.component'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
 import { BeltColor } from '@renderer/db/member.schema'
 import { GreenevilleBJJUser } from '@renderer/types/users.types'
+import dayjs from 'dayjs'
 import { useEffect, useState } from 'react'
 
-interface PromoteMemberDialogProps {
+interface EditMemberDialogProps {
   open: boolean
   handleClose: () => void
   selectedMember: GreenevilleBJJUser
 }
 
-export const PromoteMemberDialog = ({
-  open,
-  selectedMember,
-  handleClose
-}: PromoteMemberDialogProps) => {
+export const EditMemberDialog = ({ open, selectedMember, handleClose }: EditMemberDialogProps) => {
   const [belt, setBelt] = useState(BeltColor.WHITE)
   const [stripes, setStripes] = useState(0)
 
@@ -57,11 +54,11 @@ export const PromoteMemberDialog = ({
             label="Belt"
             onChange={(e) => setBelt(e.target.value)}
           >
-            {/* {isAdult(selectedMember.birthday).map((belt) => (
+            {isAdult(dayjs(selectedMember.birthday).toDate()).map((belt) => (
               <MenuItem value={belt}>
                 <BeltIcon belt={belt} />
               </MenuItem>
-            ))} */}
+            ))}
           </Select>
           {belt !== BeltColor.RED &&
             belt !== BeltColor.RED_WHITE &&

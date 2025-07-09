@@ -27,8 +27,6 @@ export const DBProvider: React.FC<DBProviderProps> = ({ children }) => {
   useEffect(() => {
     initDb()
       .then((createdDb) => {
-        console.log(`🚀 ~ db.context.tsx:30 ~ .then ~ createdDb: \n`, createdDb.collections)
-
         setDb(createdDb)
         setLoading(false)
       })

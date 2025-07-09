@@ -5,10 +5,12 @@ import { RxDBMigrationSchemaPlugin } from 'rxdb/plugins/migration-schema'
 import { wrappedValidateAjvStorage } from 'rxdb/plugins/validate-ajv'
 import { checkinSchema, userSchema } from './db/member.schema'
 import { RxDBQueryBuilderPlugin } from 'rxdb/plugins/query-builder'
+import { RxDBUpdatePlugin } from 'rxdb/plugins/update'
 
 addRxPlugin(RxDBQueryBuilderPlugin)
 addRxPlugin(RxDBDevModePlugin)
 addRxPlugin(RxDBMigrationSchemaPlugin)
+addRxPlugin(RxDBUpdatePlugin)
 
 export const initDb = async () => {
   if (process.env.NODE_ENV !== 'production') {

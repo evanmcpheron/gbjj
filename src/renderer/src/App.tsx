@@ -9,6 +9,8 @@ import NewMembersView from './views/NewMember/new.members.view'
 import Members from './views/Members/members.view'
 import { CheckInUser } from './views/Checkin/checkin.user.view'
 import { DBProvider } from './context/db.context'
+import { UserEdit } from './views/UserEdit/user.edit.view'
+import { QR } from './views/UserEdit/qr.view'
 
 const theme = createTheme({
   colorSchemes: {
@@ -188,6 +190,8 @@ const App = () => {
               <Route key={2} path={'/new-member'} element={<NewMembersView />} />
               <Route key={3} path={'/members'} element={<Members />} />
               <Route key={3} path={'/check-in/:id'} element={<CheckInUser />} />
+              <Route key={3} path={'/user/:id'} element={<UserEdit />} />
+              <Route key={3} path={'/qr/:id'} element={<QR />} />
             </Routes>
           </Router>
         </LocalizationProvider>
