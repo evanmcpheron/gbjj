@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useDB } from '@renderer/context/db.context'
 import { GreenevilleBJJUser, Promotion, BeltColor } from '@renderer/types/users.types'
 import { v4 as uuid } from 'uuid'

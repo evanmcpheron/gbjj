@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Container, Paper, Typography, Alert, Stack } from '@mui/material'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { Checkin, GreenevilleBJJUser } from '@renderer/types/users.types'
 import { useUserApi } from '@renderer/hooks/user.api'
 import { useCheckinApi } from '@renderer/hooks/checkin.api'
@@ -10,7 +10,6 @@ import { UserCheckinTable } from './components/user.checkin.table'
 export const CheckInUser = () => {
   const clickedRef = useRef(false)
   const { id } = useParams()
-  const navigate = useNavigate()
   const checkedInTodayRef = useRef(false)
   const [checkinsThisMonthCount, setCheckinsThisMonthCount] = useState(0)
   const [checkinsLastMonthCount, setCheckinsLastMonthCount] = useState(0)

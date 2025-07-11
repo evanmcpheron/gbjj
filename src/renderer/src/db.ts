@@ -1,5 +1,4 @@
 import { addRxPlugin, createRxDatabase } from 'rxdb/plugins/core'
-import { RxDBDevModePlugin } from 'rxdb/plugins/dev-mode'
 import { getRxStorageLocalstorage } from 'rxdb/plugins/storage-localstorage'
 import { RxDBMigrationSchemaPlugin } from 'rxdb/plugins/migration-schema'
 import { RxDBJsonDumpPlugin } from 'rxdb/plugins/json-dump'
@@ -15,7 +14,6 @@ import { RxDBUpdatePlugin } from 'rxdb/plugins/update'
 
 addRxPlugin(RxDBQueryBuilderPlugin)
 addRxPlugin(RxDBJsonDumpPlugin)
-addRxPlugin(RxDBDevModePlugin)
 addRxPlugin(RxDBMigrationSchemaPlugin)
 addRxPlugin(RxDBUpdatePlugin)
 

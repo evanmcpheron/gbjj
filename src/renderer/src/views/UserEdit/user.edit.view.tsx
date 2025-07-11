@@ -53,7 +53,6 @@ export const UserEdit = () => {
 
   const {
     fetchThisMonth,
-    fetchLastMonth,
     fetchCheckinsByRank,
     fetchCheckinsByUser,
     manualCreateCheckin,
