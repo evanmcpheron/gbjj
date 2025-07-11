@@ -36,7 +36,15 @@ export const initDb = async () => {
 
   await db.addCollections({
     user: {
-      schema: userSchema
+      schema: userSchema,
+      migrationStrategies: {
+        1: (oldDoc) => {
+          return {
+            ...oldDoc,
+            hasSignedWaiver: false
+          }
+        }
+      }
     },
     checkin: {
       schema: checkinSchema

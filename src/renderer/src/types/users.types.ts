@@ -64,6 +64,7 @@ export interface GreenevilleBJJUser {
   phone: string
   promotions: Promotion[]
   checkins: Checkin[]
+  hasSignedWaiver: boolean
   emergencyContact: EmergencyContact
   rank: Promotion
   checkinsAtRank?: Checkin[]

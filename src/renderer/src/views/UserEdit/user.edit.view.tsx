@@ -28,7 +28,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  IconButton
+  IconButton,
+  Switch
 } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import DeleteIcon from '@mui/icons-material/Delete'
@@ -86,7 +87,8 @@ export const UserEdit = () => {
     lastName: '',
     birthday: new Date(),
     email: '',
-    phone: ''
+    phone: '',
+    hasSignedWaiver: false
   })
   const [manualCheckinForm, setManualCheckinForm] = useState({
     belt: BeltColor.WHITE,
@@ -154,24 +156,26 @@ export const UserEdit = () => {
 
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Button
-        variant="contained"
-        sx={{ mt: 3, position: 'fixed', bottom: 10, right: 10 }}
-        onClick={() => {
-          navigate(`/qr/${id}`)
-        }}
-      >
-        <QrCode2 sx={{ fontSize: 40 }} />
-      </Button>
       <Paper sx={{ p: 3, position: 'relative' }}>
-        <Button
-          onClick={handleGoBack}
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          sx={{ position: 'absolute', top: 16, left: 16 }}
-        >
-          Go Back
-        </Button>
+        <Box>
+          <Button
+            onClick={handleGoBack}
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+            sx={{ position: 'absolute', top: 16, left: 16 }}
+          >
+            Go Back
+          </Button>
+          <Button
+            variant="contained"
+            sx={{ position: 'absolute', top: 16, right: 16 }}
+            onClick={() => {
+              navigate(`/qr/${id}`)
+            }}
+          >
+            <QrCode2 sx={{ fontSize: 40 }} />
+          </Button>
+        </Box>
 
         <Typography variant="h4" align="center" gutterBottom>
           Edit Member
@@ -219,6 +223,17 @@ export const UserEdit = () => {
                   birthday: value?.toDate() || new Date()
                 }))
               }}
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.hasSignedWaiver}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, hasSignedWaiver: e.target.checked }))
+                  }
+                />
+              }
+              label="Signed Waiver"
             />
           </Stack>
         </Grid>

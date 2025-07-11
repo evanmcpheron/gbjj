@@ -113,7 +113,7 @@ export const checkinSchema = {
 
 export const userSchema = {
   title: 'user schema',
-  version: 0,
+  version: 1,
   description: 'Represents a BJJ club user',
   primaryKey: 'id',
   type: 'object',
@@ -125,12 +125,22 @@ export const userSchema = {
     birthday: { type: 'string', format: 'date-time' },
     email: { type: 'string', format: 'email' },
     phone: { type: 'string' },
+    hasSignedWaiver: { type: 'boolean' },
     createdAt: {
       type: 'string',
-
       format: 'date-time'
     },
     updatedAt: { type: 'string', format: 'date-time' }
   },
-  required: ['id', 'firstName', 'lastName', 'gender', 'birthday', 'email', 'phone', 'updatedAt']
+  required: [
+    'id',
+    'firstName',
+    'lastName',
+    'hasSignedWaiver',
+    'gender',
+    'birthday',
+    'email',
+    'phone',
+    'updatedAt'
+  ]
 }

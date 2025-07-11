@@ -97,7 +97,7 @@ export function CreateEmergencyContactDialog({ open, userId, contact, onClose, o
               />
             }
             label="Is Parent / Guardian"
-          />{' '}
+          />
           <FormControlLabel
             control={
               <Switch

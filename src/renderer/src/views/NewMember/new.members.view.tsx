@@ -12,6 +12,7 @@ import {
   RadioGroup,
   Select,
   SelectChangeEvent,
+  Switch,
   TextField,
   Typography
 } from '@mui/material'
@@ -36,7 +37,8 @@ const NewMembersView: React.FC = () => {
     gender: 'male',
     birthday: new Date(),
     email: '',
-    phone: ''
+    phone: '',
+    hasSignedWaiver: false
   })
 
   const { createUser, promoteUser } = useUserApi()
@@ -49,7 +51,8 @@ const NewMembersView: React.FC = () => {
       email: formData.email,
       phone: formData.phone,
       gender: formData.gender,
-      birthday: formData.birthday.toISOString()
+      birthday: formData.birthday.toISOString(),
+      hasSignedWaiver: formData.hasSignedWaiver
     })
 
     await promoteUser({
@@ -140,6 +143,18 @@ const NewMembersView: React.FC = () => {
                 birthday: value?.toDate() || new Date()
               }))
             }}
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                sx={{ my: 4 }}
+                checked={formData.hasSignedWaiver}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, hasSignedWaiver: e.target.checked }))
+                }
+              />
+            }
+            label="Signed Waiver"
           />
         </Box>
         <Typography>Rank</Typography>
