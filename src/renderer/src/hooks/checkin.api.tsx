@@ -1,6 +1,6 @@
 // checkin.api.ts
 import { useState, useEffect, useCallback } from 'react'
-import type { BeltColor, Checkins } from '@renderer/types/users.types'
+import type { BeltColor, Checkin } from '@renderer/types/users.types'
 import { useDB } from '@renderer/context/db.context'
 import { v4 as uuid } from 'uuid'
 import dayjs from 'dayjs'
@@ -8,8 +8,8 @@ import dayjs from 'dayjs'
 export const useCheckinApi = () => {
   const { checkin: apiCheckin, user: apiUser } = useDB()
   const [isLoading, setIsLoading] = useState(false)
-  const [allCheckins, setAllCheckins] = useState<Checkins[]>([])
-  const [checkinLookup, setCheckinLookup] = useState<Checkins | null>(null)
+  const [allCheckins, setAllCheckins] = useState<Checkin[]>([])
+  const [checkinLookup, setCheckinLookup] = useState<Checkin | null>(null)
 
   const getMonthRange = (date: Date) => {
     const start = new Date(date.getFullYear(), date.getMonth(), 1)
@@ -18,7 +18,7 @@ export const useCheckinApi = () => {
   }
 
   const fetchAllCheckins = useCallback(
-    async (options?: { skip?: number; limit?: number; filter?: Partial<Checkins> }) => {
+    async (options?: { skip?: number; limit?: number; filter?: Partial<Checkin> }) => {
       setIsLoading(true)
       try {
         if (!apiCheckin) {
@@ -69,68 +69,71 @@ export const useCheckinApi = () => {
   )
 
   const createCheckin = useCallback(
-    async (userId: string, checkinData: Omit<Checkins, 'id' | 'checkedAt' | 'userId'>) => {
-      setIsLoading(true)
+    async (
+      userId: string,
+      checkinData: Omit<Checkin, 'id' | 'checkedAt' | 'createdAt' | 'updatedAt' | 'userId'>
+    ) => {
       try {
-        if (!apiUser) return
-        const userDoc = await apiUser.findOne(userId).exec()
-        if (!userDoc) throw new Error('User not found')
-
-        const newCheckin: Checkins = {
+        if (!apiCheckin) return
+        const nextCheckinTime = await timeUntilNextCheckin(userId)
+        console.log(
+          `🚀 ~ checkin.api.tsx:80 ~ useCheckinApi ~ nextCheckinTime: \n`,
+          nextCheckinTime
+        )
+        if (nextCheckinTime !== 0) {
+          return
+        }
+        const newCheckin: Checkin = {
           id: uuid(),
-          checkedAt: new Date().toISOString(),
+          checkedAt: dayjs(new Date()).subtract(10, 'millisecond').toISOString(),
           belt: checkinData.belt,
           stripes: checkinData.stripes,
-          userId
+          userId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         }
 
-        // Merge in the new checkin and overwrite the whole doc:
-        const updated = {
-          ...userDoc.toJSON(),
-          checkins: [...userDoc.checkins, newCheckin]
-        }
-        await apiUser.upsert(updated)
+        await apiCheckin.insert(newCheckin)
 
         return newCheckin
-      } finally {
-        setIsLoading(false)
+      } catch (error) {
+        console.error(error)
+        return
       }
     },
-    [apiUser]
+    [apiCheckin]
   )
   const manualCreateCheckin = useCallback(
-    async (userId: string, checkinData: Omit<Checkins, 'id' | 'userId'>) => {
+    async (
+      userId: string,
+      checkinData: Omit<Checkin, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+    ) => {
       setIsLoading(true)
       try {
-        if (!apiUser) return
-        const userDoc = await apiUser.findOne(userId).exec()
-        if (!userDoc) throw new Error('User not found')
+        if (!apiCheckin) return
 
-        const newCheckin: Checkins = {
+        const newCheckin: Checkin = {
           id: uuid(),
           checkedAt: checkinData.checkedAt,
           belt: checkinData.belt,
           stripes: checkinData.stripes,
-          userId
+          userId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         }
 
-        // Merge in the new checkin and overwrite the whole doc:
-        const updated = {
-          ...userDoc.toJSON(),
-          checkins: [...userDoc.checkins, newCheckin]
-        }
-        await apiUser.upsert(updated)
+        const doc = await apiCheckin.insert(newCheckin)
 
-        return newCheckin
+        return doc.toJSON()
       } finally {
         setIsLoading(false)
       }
     },
-    [apiUser]
+    [apiCheckin]
   )
 
   const updateCheckin = useCallback(
-    async (id: string, updates: Partial<Checkins>) => {
+    async (id: string, updates: Partial<Checkin>) => {
       setIsLoading(true)
       try {
         if (!apiCheckin) {
@@ -148,19 +151,14 @@ export const useCheckinApi = () => {
   )
 
   const deleteCheckin = useCallback(
-    async (userId: string, checkinId: string) => {
+    async (checkinId: string) => {
       setIsLoading(true)
       try {
-        if (!apiUser) return false
+        if (!apiCheckin) return false
+        const checkinDoc = await apiCheckin.findOne(checkinId).exec()
+        if (!checkinDoc) throw new Error('Checkin not found')
 
-        const userDoc = await apiUser.findOne(userId).exec()
-        if (!userDoc) throw new Error('User not found')
-
-        await userDoc.update({
-          $set: {
-            checkins: userDoc.checkins.filter((c) => c.id !== checkinId)
-          }
-        })
+        await checkinDoc.remove()
 
         return true
       } catch (error) {
@@ -174,7 +172,7 @@ export const useCheckinApi = () => {
   )
 
   const fetchCheckinsThisMonth = useCallback(
-    async (userId: string): Promise<Checkins[]> => {
+    async (userId: string): Promise<Checkin[]> => {
       setIsLoading(true)
       try {
         if (!apiCheckin) return []
@@ -196,11 +194,16 @@ export const useCheckinApi = () => {
   )
 
   const fetchCheckinsByUserId = useCallback(
-    async (userId: string, fromIso?: string, toIso?: string): Promise<Checkins[]> => {
+    async (userId: string, fromIso?: string, toIso?: string): Promise<Checkin[]> => {
       setIsLoading(true)
       try {
         if (!apiCheckin) return []
-        const checkinDoc = await apiCheckin.find().where('userId').eq(userId).exec()
+        const checkinDoc = await apiCheckin
+          .find()
+          .where('userId')
+          .eq(userId)
+          .sort({ checkedAt: 'desc' })
+          .exec()
         if (!checkinDoc) return []
 
         const fromTs = fromIso ? Date.parse(fromIso) : Number.NEGATIVE_INFINITY
@@ -221,7 +224,7 @@ export const useCheckinApi = () => {
   )
 
   const fetchCheckinsLastMonth = useCallback(
-    async (userId: string): Promise<Checkins[]> => {
+    async (userId: string): Promise<Checkin[]> => {
       setIsLoading(true)
       try {
         if (!apiCheckin) return []
@@ -245,11 +248,12 @@ export const useCheckinApi = () => {
   )
 
   const fetchCheckinsAtCurrentRank = useCallback(
-    async (userId: string, belt: BeltColor, stripes: number): Promise<Checkins[]> => {
+    async (userId: string, belt: BeltColor, stripes: number): Promise<Checkin[]> => {
       setIsLoading(true)
       try {
         if (!apiCheckin) return []
         const checkinDoc = await apiCheckin.find().where('userId').eq(userId).exec()
+
         if (!checkinDoc) return []
         return checkinDoc.filter((c) => c.belt === belt && c.stripes === stripes)
       } catch (err) {
@@ -266,9 +270,13 @@ export const useCheckinApi = () => {
     async (userId: string): Promise<number> => {
       setIsLoading(true)
       try {
-        if (!apiCheckin) return 0
+        if (!apiCheckin) {
+          return 0
+        }
         const checkinDoc = await apiCheckin.find().where('userId').eq(userId).exec()
-        if (!checkinDoc) return 0
+        if (!checkinDoc) {
+          return 0
+        }
         if (!checkinDoc || !checkinDoc.length) {
           return 0
         }
@@ -295,14 +303,19 @@ export const useCheckinApi = () => {
     async (userId: string): Promise<string> => {
       setIsLoading(true)
       try {
-        if (!apiUser) return ''
+        if (!apiCheckin) return ''
 
-        const userDoc = await apiUser.findOne(userId).exec()
+        const userDoc = await apiCheckin
+          .find()
+          .where('userId')
+          .eq(userId)
+          .sort({ createdAt: 'desc' })
+          .exec()
         if (!userDoc) {
           return dayjs().format('M/D/YYYY h:mm A')
         }
 
-        const lastTs = userDoc.checkins
+        const lastTs = userDoc
           .map((c) => Date.parse(c.checkedAt))
           .reduce((max, cur) => Math.max(max, cur), 0)
 

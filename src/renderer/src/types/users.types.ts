@@ -21,12 +21,37 @@ export enum BeltColor {
   RED = 'RED'
 }
 
-export interface Checkins {
+export interface EmergencyContact {
+  id: string
+  name: string
+  email: string
+  phone: string
+  relationship: string
+  isPrimaryContact: boolean
+  isParentOrGuardian: boolean
+  userId: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Checkin {
   id: string
   checkedAt: string
   belt: BeltColor
   stripes: number
   userId: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Promotion {
+  id: string
+  promotedAt: string
+  belt: BeltColor
+  stripes: number
+  userId: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface GreenevilleBJJUser {
@@ -37,6 +62,13 @@ export interface GreenevilleBJJUser {
   birthday: string
   email: string
   phone: string
-  belt: BeltColor
-  stripes: number
+  promotions: Promotion[]
+  checkins: Checkin[]
+  emergencyContact: EmergencyContact
+  rank: Promotion
+  checkinsAtRank?: Checkin[]
+  checkinsLastMonth?: Checkin[]
+  checkinsThisMonth?: Checkin[]
+  createdAt: string
+  updatedAt: string
 }

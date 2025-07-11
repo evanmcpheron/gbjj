@@ -35,7 +35,7 @@ export default function Members() {
   const [filteredUsers, setFilteredUsers] = useState<GreenevilleBJJUser[]>([])
   const [searchTerm, setSearchTerm] = useState('')
 
-  const { fetchAllUsers, allUsers, isLoading } = useUserApi()
+  const { fetchAllUsers, allUsers, getMostRecentPromotionByUserId, isLoading } = useUserApi()
 
   useEffect(() => {
     fetchAllUsers()
@@ -130,8 +130,10 @@ export default function Members() {
                 <TableCell align="left">Name</TableCell>
                 <TableCell align="left">Email</TableCell>
                 <TableCell align="left">Phone</TableCell>
+                <TableCell align="left">Promotion Date</TableCell>
                 <TableCell align="left">Rank</TableCell>
-                <TableCell align="left">Actions</TableCell>
+                <TableCell align="left">Edit</TableCell>
+                <TableCell align="left">Emergency Contact</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -146,7 +148,10 @@ export default function Members() {
                       <TableCell align="left">{user.email}</TableCell>
                       <TableCell align="left">{user.phone}</TableCell>
                       <TableCell align="left">
-                        <BeltIcon belt={user.belt} stripes={user.stripes} />
+                        {dayjs(new Date(user.rank.promotedAt)).format('MM/DD/YYYY')}
+                      </TableCell>
+                      <TableCell align="left">
+                        <BeltIcon belt={user.rank.belt} stripes={user.rank.stripes} />
                       </TableCell>
                       <TableCell align="left">
                         <Button
@@ -158,6 +163,19 @@ export default function Members() {
                           }}
                         >
                           Edit
+                        </Button>
+                      </TableCell>
+                      <TableCell align="left">
+                        <Button
+                          variant="contained"
+                          size="small"
+                          color="error"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/emergency/${user.id}`)
+                          }}
+                        >
+                          EMERGENCY CONTACT
                         </Button>
                       </TableCell>
                     </TableRow>

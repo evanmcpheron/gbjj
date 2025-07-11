@@ -44,6 +44,37 @@ export const beltColorEnum = [
   'RED'
 ] as const
 
+export const emergencyContactSchema = {
+  title: 'emergency contact schema',
+  version: 1,
+  description: 'Schema for emergency contacts',
+  primaryKey: 'id',
+  type: 'object',
+  properties: {
+    id: { type: 'string', minLength: 1, maxLength: 255 },
+    name: { type: 'string', minLength: 1, maxLength: 255 },
+    email: { type: 'string', format: 'email' },
+    phone: { type: 'string' },
+    relationship: { type: 'string' },
+    isParentOrGuardian: { type: 'boolean' },
+    isPrimaryContact: { type: 'boolean' },
+    userId: { type: 'string', ref: 'users' },
+    createdAt: { type: 'string', format: 'date-time' },
+    updatedAt: { type: 'string', format: 'date-time' }
+  },
+  required: [
+    'id',
+    'name',
+    'email',
+    'phone',
+    'relationship',
+    'isParentOrGuardian',
+    'isPrimaryContact',
+    'userId',
+    'updatedAt'
+  ]
+}
+
 export const promotionSchema = {
   title: 'promotion schema',
   version: 0,
@@ -55,9 +86,11 @@ export const promotionSchema = {
     promotedAt: { type: 'string', format: 'date-time' },
     belt: { type: 'string', enum: beltColorEnum },
     stripes: { type: 'integer', minimum: 0 },
-    userId: { type: 'string', ref: 'users' }
+    userId: { type: 'string', ref: 'users' },
+    createdAt: { type: 'string', format: 'date-time' },
+    updatedAt: { type: 'string', format: 'date-time' }
   },
-  required: ['id', 'promotedAt', 'belt', 'stripes', 'userId']
+  required: ['id', 'promotedAt', 'belt', 'stripes', 'userId', 'updatedAt']
 }
 
 export const checkinSchema = {
@@ -71,15 +104,17 @@ export const checkinSchema = {
     checkedAt: { type: 'string', format: 'date-time' },
     belt: { type: 'string', enum: beltColorEnum },
     stripes: { type: 'integer', minimum: 0 },
-    userId: { type: 'string', ref: 'users' }
+    userId: { type: 'string', ref: 'users' },
+    createdAt: { type: 'string', format: 'date-time' },
+    updatedAt: { type: 'string', format: 'date-time' }
   },
-  required: ['id', 'checkedAt', 'belt', 'stripes']
+  required: ['id', 'checkedAt', 'belt', 'stripes', 'updatedAt']
 }
 
 export const userSchema = {
   title: 'user schema',
   version: 0,
-  description: 'Represents a Greeneville BJJ club user',
+  description: 'Represents a BJJ club user',
   primaryKey: 'id',
   type: 'object',
   properties: {
@@ -90,18 +125,12 @@ export const userSchema = {
     birthday: { type: 'string', format: 'date-time' },
     email: { type: 'string', format: 'email' },
     phone: { type: 'string' },
-    belt: { type: 'string', enum: beltColorEnum },
-    stripes: { type: 'integer', minimum: 0 }
+    createdAt: {
+      type: 'string',
+
+      format: 'date-time'
+    },
+    updatedAt: { type: 'string', format: 'date-time' }
   },
-  required: [
-    'id',
-    'firstName',
-    'lastName',
-    'gender',
-    'birthday',
-    'email',
-    'phone',
-    'belt',
-    'stripes'
-  ]
+  required: ['id', 'firstName', 'lastName', 'gender', 'birthday', 'email', 'phone', 'updatedAt']
 }

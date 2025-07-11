@@ -39,17 +39,21 @@ const NewMembersView: React.FC = () => {
     phone: ''
   })
 
-  const { createUser } = useUserApi()
+  const { createUser, promoteUser } = useUserApi()
 
   const handleSubmit = async (e: GreenevilleBJJObject) => {
     e.preventDefault()
-    await createUser({
+    const createdUser = await createUser({
       firstName: formData.firstName,
       lastName: formData.lastName,
       email: formData.email,
       phone: formData.phone,
       gender: formData.gender,
-      birthday: formData.birthday.toISOString(),
+      birthday: formData.birthday.toISOString()
+    })
+
+    await promoteUser({
+      userId: createdUser.id,
       belt: formData.belt,
       stripes: formData.stripes
     }).then(() => {

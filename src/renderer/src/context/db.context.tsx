@@ -7,13 +7,17 @@ interface DBContextType {
   db: RxDatabase | null
   user: RxDatabase['collections']['user'] | null
   checkin: RxDatabase['collections']['checkin'] | null
+  promotion: RxDatabase['collections']['promotion'] | null
+  emergencyContact: RxDatabase['collections']['emergencyContact'] | null
 }
 
 // Create a context with a default empty state
 const DBContext = createContext<DBContextType>({
   db: null,
   user: null,
-  checkin: null
+  checkin: null,
+  promotion: null,
+  emergencyContact: null
 })
 
 interface DBProviderProps {
@@ -38,7 +42,9 @@ export const DBProvider: React.FC<DBProviderProps> = ({ children }) => {
   const value: DBContextType = {
     db,
     user: db?.collections.user ?? null,
-    checkin: db?.collections.checkins ?? null
+    checkin: db?.collections.checkin ?? null,
+    promotion: db?.collections.promotion ?? null,
+    emergencyContact: db?.collections.emergencyContact ?? null
   }
 
   if (loading) {

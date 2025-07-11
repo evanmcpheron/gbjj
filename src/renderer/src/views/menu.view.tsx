@@ -1,5 +1,5 @@
 import React from 'react'
-import { Box, Paper, Stack, Button, Typography } from '@mui/material'
+import { Box, Paper, Stack, Button, Typography, Divider } from '@mui/material'
 
 interface MenuProps {
   showMenu: boolean
@@ -24,41 +24,39 @@ export const Menu: React.FC<MenuProps> = ({ showMenu, onClose }) => {
     >
       <Paper
         onClick={(e) => e.stopPropagation()}
-        elevation={12}
+        variant="outlined"
         sx={{
           width: 320,
-          p: 4,
-          borderRadius: 2,
+          p: 3,
+          borderRadius: 1,
           textAlign: 'center'
         }}
       >
-        <Typography variant="h6" gutterBottom>
-          Menu
-        </Typography>
-
-        <Stack spacing={2} mt={1}>
-          <Button variant="contained" fullWidth href="/">
-            Check In
-          </Button>
-          <Button variant="contained" fullWidth href="/new-member">
-            New Member
-          </Button>
-          <Button variant="contained" fullWidth href="/members">
-            Members
-          </Button>
+        <Stack spacing={3}>
+          <Typography variant="h4" align="center">
+            Menu
+          </Typography>
+          <Divider />
+          <Stack spacing={2}>
+            <Button variant="contained" fullWidth href="/">
+              Check In
+            </Button>
+            <Button variant="contained" fullWidth href="/new-member">
+              New Member
+            </Button>
+            <Button variant="contained" fullWidth href="/members">
+              Members
+            </Button>
+            <Button variant="contained" fullWidth href="/backup">
+              Backup
+            </Button>
+          </Stack>
+          {onClose && (
+            <Button variant="outlined" fullWidth size="small" onClick={() => onClose(false)}>
+              Close
+            </Button>
+          )}
         </Stack>
-
-        {onClose && (
-          <Button
-            variant="outlined"
-            onClick={() => onClose(false)}
-            fullWidth
-            sx={{ mt: 3 }}
-            size="small"
-          >
-            Close
-          </Button>
-        )}
       </Paper>
     </Box>
   )

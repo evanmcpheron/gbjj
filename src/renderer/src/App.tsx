@@ -12,6 +12,8 @@ import { DBProvider } from './context/db.context'
 import { UserEdit } from './views/UserEdit/user.edit.view'
 import { QR } from './views/UserEdit/qr.view'
 import { Button } from '@mui/material'
+import EmergencyContactsView from './views/EmergencyContact/emergency.contact.view'
+import { BackupView } from './views/Backup/backup.view'
 
 const theme = createTheme({
   colorSchemes: {
@@ -199,6 +201,8 @@ const App = () => {
               <Route key={3} path={'/check-in/:id'} element={<CheckInUser />} />
               <Route key={3} path={'/user/:id'} element={<UserEdit />} />
               <Route key={3} path={'/qr/:id'} element={<QR />} />
+              <Route key={3} path={'/emergency/:id'} element={<EmergencyContactsView />} />
+              <Route key={3} path={'/backup'} element={<BackupView />} />
             </Routes>
           </Router>
         </LocalizationProvider>
