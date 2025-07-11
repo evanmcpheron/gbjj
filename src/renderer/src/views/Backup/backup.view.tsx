@@ -34,7 +34,7 @@ export const BackupView = () => {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = 'rxdb-backup.json'
+    link.download = 'backup_DO_NOT_DELETE.json'
     link.click()
     URL.revokeObjectURL(url)
   }
