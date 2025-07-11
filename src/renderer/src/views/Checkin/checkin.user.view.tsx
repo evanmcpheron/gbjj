@@ -98,7 +98,7 @@ export const CheckInUser = () => {
 
     const timer = setTimeout(() => {
       if (!clickedRef.current) {
-        // navigate('/')
+        navigate('/')
       }
     }, 6000)
 
@@ -107,10 +107,6 @@ export const CheckInUser = () => {
       clearTimeout(updateTimer)
     }
   }, [id])
-
-  // if (isLoading) {
-  //   return <div>Loading</div>
-  // }
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
