@@ -20,19 +20,20 @@ export const CheckInUser = () => {
   const [user, setUser] = useState<GreenevilleBJJUser | null>(null)
   const { fetchUserById } = useUserApi()
   const {
-    fetchCheckinsThisMonth,
-    fetchCheckinsLastMonth,
-    fetchCheckinsAtCurrentRank,
+    fetchThisMonth,
+    fetchLastMonth,
+    fetchCheckinsByRank,
     timeUntilNextCheckin,
     getNextCheckinTime,
     createCheckin
   } = useCheckinApi()
 
   const handleCheckIn = async (userToCheckin: GreenevilleBJJUser) => {
-    const newCheckin = await createCheckin(userToCheckin.id, {
-      belt: userToCheckin.rank.belt,
-      stripes: userToCheckin.rank.stripes
-    })
+    const newCheckin = await createCheckin(
+      userToCheckin.id,
+      userToCheckin.rank.belt,
+      userToCheckin.rank.stripes
+    )
     const nextTime = await getNextCheckinTime(userToCheckin.id)
     setNextAvailableTime(nextTime)
     checkedInTodayRef.current = true
@@ -41,16 +42,15 @@ export const CheckInUser = () => {
 
   const updateCheckin = async () => {
     if (!id) return
-    // setIsLoading(true)
     try {
       const responseUser = await fetchUserById(id)
 
       const [thisMonth, lastMonth] = await Promise.all([
-        fetchCheckinsThisMonth(responseUser.id),
-        fetchCheckinsLastMonth(responseUser.id)
+        fetchThisMonth(responseUser.id),
+        fetchLastMonth(responseUser.id)
       ])
 
-      const rankChecks = await fetchCheckinsAtCurrentRank(
+      const rankChecks = await fetchCheckinsByRank(
         responseUser.id,
         responseUser.rank?.belt,
         responseUser.rank?.stripes
@@ -80,14 +80,13 @@ export const CheckInUser = () => {
     } catch (err) {
       console.error(err)
     } finally {
-      // setIsLoading(false)
     }
   }
 
   useEffect(() => {
     ;(async () => {
       if (id) {
-        setCheckinsThisMonth(await fetchCheckinsThisMonth(id))
+        setCheckinsThisMonth(await fetchThisMonth(id))
       }
     })()
     const updateTimer = setTimeout(() => {
@@ -98,7 +97,7 @@ export const CheckInUser = () => {
 
     const timer = setTimeout(() => {
       if (!clickedRef.current) {
-        navigate('/')
+        // navigate('/')
       }
     }, 6000)
 

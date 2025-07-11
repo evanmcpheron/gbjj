@@ -45,6 +45,7 @@ export default function Members() {
 
   useEffect(() => {
     let users = [...allUsers]
+    console.log(`🚀 ~ members.view.tsx:48 ~ useEffect ~ users: \n`, users)
 
     if (filterMode === 'adult') {
       users = users.filter((u) => adultFilter(dayjs(u.birthday).toDate()))

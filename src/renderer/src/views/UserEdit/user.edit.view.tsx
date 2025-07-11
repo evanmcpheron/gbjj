@@ -35,7 +35,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import DeleteIcon from '@mui/icons-material/Delete'
 import { useCheckinApi } from '@renderer/hooks/checkin.api'
 import { useEffect, useState } from 'react'
-import { useUserApi } from '@renderer/hooks/user.api'
+import { usePromotionApi, useUserApi } from '@renderer/hooks/user.api'
 import { BeltColor, Checkin, GreenevilleBJJUser, Promotion } from '@renderer/types/users.types'
 import { adultOrChildBelt } from '@renderer/components/belt/all.belts.component'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
@@ -52,22 +52,17 @@ export const UserEdit = () => {
   const navigate = useNavigate()
 
   const {
-    fetchCheckinsThisMonth,
-    fetchCheckinsLastMonth,
-    fetchCheckinsAtCurrentRank,
-    fetchCheckinsByUserId,
+    fetchThisMonth,
+    fetchLastMonth,
+    fetchCheckinsByRank,
+    fetchCheckinsByUser,
     manualCreateCheckin,
     deleteCheckin
   } = useCheckinApi()
 
-  const {
-    fetchUserById,
-    updateUser,
-    deleteUser,
-    isLoading,
-    fetchAllPromotionsByUserId,
-    deletePromotion
-  } = useUserApi()
+  const { fetchUserById, updateUser, deleteUser, isLoading } = useUserApi()
+
+  const { fetchPromotions, deletePromotion } = usePromotionApi()
 
   const [user, setUser] = useState<GreenevilleBJJUser | null>(null)
   const [allCheckins, setAllCheckins] = useState<Checkin[]>([])
@@ -100,21 +95,12 @@ export const UserEdit = () => {
     if (!id) return
     ;(async () => {
       const currentUser = await fetchUserById(id)
-      const allPromotionsResponse = await fetchAllPromotionsByUserId(currentUser.id)
 
-      setAllPromotions(allPromotionsResponse)
-      const thisMonth = await fetchCheckinsThisMonth(id)
-      setCheckinsThisMonth(thisMonth)
+      setAllPromotions(currentUser.promotions)
+      setCheckinsThisMonth(currentUser.checkinsThisMonth)
+      setCheckinsLastMonth(currentUser.checkinsLastMonth)
+      setCheckinsAtCurrentRank(currentUser.checkinsAtRank)
 
-      const lastMonth = await fetchCheckinsLastMonth(id)
-      setCheckinsLastMonth(lastMonth)
-
-      const currentRank = await fetchCheckinsAtCurrentRank(
-        id,
-        currentUser.rank.belt,
-        currentUser.rank.stripes
-      )
-      setCheckinsAtCurrentRank(currentRank)
       setUser(currentUser)
       setFormData(currentUser)
       setManualCheckinForm((prev) => ({
@@ -122,7 +108,7 @@ export const UserEdit = () => {
         belt: currentUser.rank.belt,
         stripes: currentUser.rank.stripes
       }))
-      const checks = await fetchCheckinsByUserId(id)
+      const checks = await fetchCheckinsByUser(id)
       setAllCheckins(checks)
     })()
   }, [id])
@@ -135,7 +121,7 @@ export const UserEdit = () => {
 
   const handleFilter = async () => {
     if (!id) return
-    const filtered = await fetchCheckinsByUserId(id, fromDate || undefined, toDate || undefined)
+    const filtered = await fetchCheckinsByUser(id, fromDate || undefined, toDate || undefined)
     setAllCheckins(filtered)
   }
 
@@ -145,6 +131,7 @@ export const UserEdit = () => {
       ...formData,
       birthday: dayjs(formData.birthday).toISOString()
     }
+
     delete transformedData.rank
 
     await updateUser(id, transformedData)
@@ -320,17 +307,17 @@ export const UserEdit = () => {
               try {
                 await deleteCheckin(checkinId)
                 if (!user) return
-                const thisMonth = await fetchCheckinsThisMonth(user.id)
+                const thisMonth = await fetchThisMonth(user.id)
 
                 setCheckinsThisMonth(thisMonth)
 
-                const currentRank = await fetchCheckinsAtCurrentRank(
+                const currentRank = await fetchCheckinsByRank(
                   user.id,
                   user.rank.belt,
                   user.rank.stripes
                 )
                 setCheckinsAtCurrentRank(currentRank)
-                const checks = await fetchCheckinsByUserId(id!)
+                const checks = await fetchCheckinsByUser(id!)
                 setAllCheckins(checks)
               } catch (error) {
                 console.error(error)
@@ -386,12 +373,14 @@ export const UserEdit = () => {
 
                       <TableCell align="right">
                         <IconButton
+                          disabled={allPromotions.length === 1}
                           onClick={async (e) => {
                             e.stopPropagation()
-                            if (!user) return
+                            if (!user || allPromotions.length > 1) return
                             await handleDeletePromotion(row.id)
 
-                            const allPromotionsResponse = await fetchAllPromotionsByUserId(user.id)
+                            const allPromotionsResponse = await fetchPromotions({ userId: user.id })
+
                             setAllPromotions(allPromotionsResponse)
                           }}
                           color="error"
@@ -420,7 +409,7 @@ export const UserEdit = () => {
                 onClose={() => setOpenRankDialog(false)}
                 onSave={async () => {
                   if (!user) return
-                  const allPromotionsResponse = await fetchAllPromotionsByUserId(user.id)
+                  const allPromotionsResponse = await fetchPromotions({ userId: user.id })
                   setAllPromotions(allPromotionsResponse)
                   setOpenRankDialog(false)
                 }}
@@ -442,7 +431,9 @@ export const UserEdit = () => {
                 id="belt-rank"
                 value={manualCheckinForm.belt}
                 label="Belt"
-                onChange={(e) => console.log(e.target.value)}
+                onChange={(e) =>
+                  setManualCheckinForm((prev) => ({ ...prev, belt: e.target.value }))
+                }
               >
                 {adultOrChildBelt(dayjs(formData.birthday).toDate()).map((belt, index) => (
                   <MenuItem key={index} value={belt}>
@@ -457,10 +448,15 @@ export const UserEdit = () => {
                     <FormLabel id="stripes">Stripes</FormLabel>
                     <RadioGroup
                       aria-labelledby="stripes"
-                      defaultValue={user?.rank.stripes}
+                      defaultValue={manualCheckinForm.stripes}
                       name="stripes"
                       row
-                      onChange={(e) => console.log(e.target.value)}
+                      onChange={(e) =>
+                        setManualCheckinForm((prev) => ({
+                          ...prev,
+                          stripes: parseInt(e.target.value)
+                        }))
+                      }
                     >
                       {Array.from(
                         { length: manualCheckinForm.belt === BeltColor.BLACK ? 7 : 5 },
@@ -501,22 +497,23 @@ export const UserEdit = () => {
                 onClick={async () => {
                   try {
                     if (!id) return
-                    await manualCreateCheckin(id!, {
-                      checkedAt: dayjs(manualCheckinForm.checkedAt).toISOString(),
-                      belt: manualCheckinForm.belt,
-                      stripes: manualCheckinForm.stripes
-                    })
+                    await manualCreateCheckin(
+                      id!,
+                      manualCheckinForm.belt,
+                      manualCheckinForm.stripes,
+                      dayjs(manualCheckinForm.checkedAt).toISOString()
+                    )
 
-                    const thisMonth = await fetchCheckinsThisMonth(id)
+                    const thisMonth = await fetchThisMonth(id)
                     setCheckinsThisMonth(thisMonth)
 
-                    const currentRank = await fetchCheckinsAtCurrentRank(
+                    const currentRank = await fetchCheckinsByRank(
                       id,
                       manualCheckinForm.belt,
                       manualCheckinForm.stripes
                     )
                     setCheckinsAtCurrentRank(currentRank)
-                    const checks = await fetchCheckinsByUserId(id!)
+                    const checks = await fetchCheckinsByUser(id!)
                     setAllCheckins(checks)
                     setManualCheckinOpen(false)
                   } catch (error) {

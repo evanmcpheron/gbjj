@@ -21,7 +21,7 @@ import { adultOrChildBelt } from '@renderer/components/belt/all.belts.component'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
 import { BeltColor } from '@renderer/db/member.schema'
 import { formatPhoneNumber } from '@renderer/helpers/strings.helper'
-import { useUserApi } from '@renderer/hooks/user.api'
+import { usePromotionApi, useUserApi } from '@renderer/hooks/user.api'
 import { GreenevilleBJJObject } from '@renderer/types/base.types'
 import dayjs from 'dayjs'
 import { useState } from 'react'
@@ -41,7 +41,8 @@ const NewMembersView: React.FC = () => {
     hasSignedWaiver: false
   })
 
-  const { createUser, promoteUser } = useUserApi()
+  const { createUser } = useUserApi()
+  const { createPromotion } = usePromotionApi()
 
   const handleSubmit = async (e: GreenevilleBJJObject) => {
     e.preventDefault()
@@ -55,7 +56,7 @@ const NewMembersView: React.FC = () => {
       hasSignedWaiver: formData.hasSignedWaiver
     })
 
-    await promoteUser({
+    await createPromotion({
       userId: createdUser.id,
       belt: formData.belt,
       stripes: formData.stripes

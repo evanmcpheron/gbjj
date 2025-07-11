@@ -62,14 +62,9 @@ export interface GreenevilleBJJUser {
   birthday: string
   email: string
   phone: string
-  promotions: Promotion[]
   checkins: Checkin[]
   hasSignedWaiver: boolean
-  emergencyContact: EmergencyContact
   rank: Promotion
-  checkinsAtRank?: Checkin[]
-  checkinsLastMonth?: Checkin[]
-  checkinsThisMonth?: Checkin[]
   createdAt: string
   updatedAt: string
 }

@@ -5,10 +5,8 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  Grid,
   Typography,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
   FormLabel,
@@ -21,7 +19,7 @@ import dayjs from 'dayjs'
 import { BeltColor, GreenevilleBJJUser } from '@renderer/types/users.types'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
 import { adultOrChildBelt } from '@renderer/components/belt/all.belts.component'
-import { useUserApi } from '@renderer/hooks/user.api'
+import { usePromotionApi } from '@renderer/hooks/user.api'
 import { DateTimePicker } from '@mui/x-date-pickers'
 
 interface RankDialogProps {
@@ -32,14 +30,18 @@ interface RankDialogProps {
 }
 
 export const RankDialog = ({ open, user, onClose, onSave }: RankDialogProps) => {
-  const { promoteUser } = useUserApi()
+  const { createPromotion } = usePromotionApi()
   const [stripes, setStripes] = useState(user.rank.stripes || 0)
   const [belt, setBelt] = useState(user.rank.belt || BeltColor.WHITE)
   const [promotionDate, setPromotionDate] = useState(new Date())
 
   const handlePromotion = async () => {
-    // save
-    await promoteUser({ userId: user.id, belt, stripes })
+    await createPromotion({
+      userId: user.id,
+      belt,
+      stripes,
+      promotedAt: promotionDate.toISOString()
+    })
     onSave()
   }
   return (
