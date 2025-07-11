@@ -19,6 +19,8 @@ import {
   TextField
 } from '@mui/material'
 import { EditMemberDialog } from './members.promote.dialog.component'
+import CheckBoxIcon from '@mui/icons-material/CheckBox'
+import ErrorIcon from '@mui/icons-material/Error'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
 import { GreenevilleBJJUser } from '@renderer/types/users.types'
 import { useUserApi } from '@renderer/hooks/user.api'
@@ -35,7 +37,7 @@ export default function Members() {
   const [filteredUsers, setFilteredUsers] = useState<GreenevilleBJJUser[]>([])
   const [searchTerm, setSearchTerm] = useState('')
 
-  const { fetchAllUsers, allUsers, getMostRecentPromotionByUserId, isLoading } = useUserApi()
+  const { fetchAllUsers, allUsers, isLoading } = useUserApi()
 
   useEffect(() => {
     fetchAllUsers()
@@ -129,11 +131,12 @@ export default function Members() {
               <TableRow>
                 <TableCell align="left">Name</TableCell>
                 <TableCell align="left">Email</TableCell>
-                <TableCell align="left">Phone</TableCell>
-                <TableCell align="left">Promotion Date</TableCell>
-                <TableCell align="left">Rank</TableCell>
-                <TableCell align="left">Edit</TableCell>
-                <TableCell align="left">Emergency Contact</TableCell>
+                <TableCell align="center">Phone</TableCell>
+                <TableCell align="center">Signed Waiver</TableCell>
+                <TableCell align="center">Promotion Date</TableCell>
+                <TableCell align="center">Rank</TableCell>
+                <TableCell align="center">Edit</TableCell>
+                <TableCell align="center">Emergency Contact</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -146,14 +149,21 @@ export default function Members() {
                         {user.firstName} {user.lastName}
                       </TableCell>
                       <TableCell align="left">{user.email}</TableCell>
-                      <TableCell align="left">{user.phone}</TableCell>
-                      <TableCell align="left">
+                      <TableCell align="center">{user.phone}</TableCell>
+                      <TableCell align="center">
+                        {user.hasSignedWaiver ? (
+                          <CheckBoxIcon color="success" />
+                        ) : (
+                          <ErrorIcon color="error" />
+                        )}
+                      </TableCell>
+                      <TableCell align="center">
                         {dayjs(new Date(user.rank.promotedAt)).format('MM/DD/YYYY')}
                       </TableCell>
-                      <TableCell align="left">
+                      <TableCell align="center">
                         <BeltIcon belt={user.rank.belt} stripes={user.rank.stripes} />
                       </TableCell>
-                      <TableCell align="left">
+                      <TableCell align="center">
                         <Button
                           variant="contained"
                           size="small"
@@ -165,7 +175,7 @@ export default function Members() {
                           Edit
                         </Button>
                       </TableCell>
-                      <TableCell align="left">
+                      <TableCell align="center">
                         <Button
                           variant="contained"
                           size="small"

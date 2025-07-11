@@ -31,7 +31,6 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useDB } from '@renderer/context/db.context'
 import { v4 as uuid } from 'uuid'
 
-// stub your real data-hook here
 function useContactApi() {
   const { emergencyContact: apiEmergencyContact } = useDB()
 
