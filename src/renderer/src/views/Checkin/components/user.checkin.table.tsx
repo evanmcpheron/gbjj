@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
 import DeleteIcon from '@mui/icons-material/Delete'
-import { Checkins } from '@renderer/types/users.types'
+import { Checkin } from '@renderer/types/users.types'
 import {
   TableContainer,
   Table,
@@ -16,7 +16,7 @@ import {
 import dayjs from 'dayjs'
 
 interface UserCheckinTableProps {
-  checkins: Checkins[]
+  checkins: Checkin[]
   handleDeleteCheckin?: (id: string) => void
 }
 
@@ -37,7 +37,7 @@ export const UserCheckinTable = ({ checkins, handleDeleteCheckin }: UserCheckinT
 
   return (
     <Paper sx={{ mt: 4, width: '100%' }}>
-      <TableContainer>
+      <TableContainer sx={{ height: 400, overflow: 'auto' }}>
         <Table>
           <TableHead>
             <TableRow>
@@ -45,7 +45,7 @@ export const UserCheckinTable = ({ checkins, handleDeleteCheckin }: UserCheckinT
               <TableCell align="left">Time</TableCell>
               <TableCell align="left">Rank</TableCell>
               {!!handleDeleteCheckin && (
-                <TableCell align="left">
+                <TableCell align="right">
                   <IconButton onClick={() => console.log('Delete clicked')} color="error">
                     <DeleteIcon />
                   </IconButton>
@@ -54,7 +54,7 @@ export const UserCheckinTable = ({ checkins, handleDeleteCheckin }: UserCheckinT
             </TableRow>
           </TableHead>
           <TableBody>
-            {paginatedCheckins.map((checkin: Checkins) => {
+            {paginatedCheckins.map((checkin: Checkin) => {
               const day = dayjs(checkin.checkedAt).format('dddd')
               const date = dayjs(checkin.checkedAt).format('M/D/YYYY')
               const time = dayjs(checkin.checkedAt).format('h:mm A')
@@ -69,7 +69,7 @@ export const UserCheckinTable = ({ checkins, handleDeleteCheckin }: UserCheckinT
                     <BeltIcon belt={checkin.belt} stripes={checkin.stripes} />
                   </TableCell>
                   {!!handleDeleteCheckin && (
-                    <TableCell>
+                    <TableCell align="right">
                       <IconButton
                         onClick={(e) => {
                           e.stopPropagation()

@@ -6,7 +6,7 @@ import { QRCodeSVG } from 'qrcode.react'
 export const QR = () => {
   const navigate = useNavigate()
   const { id } = useParams()
-  const handleGoBack = () => navigate('/members')
+  const handleGoBack = () => navigate(`/user/${id}`)
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Paper sx={{ p: 3, position: 'relative' }}>
@@ -22,8 +22,10 @@ export const QR = () => {
         <Typography variant="h4" align="center" gutterBottom>
           Check in QR Code
         </Typography>
-        <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', mt: 3 }}>
-          <QRCodeSVG value={id || ''} />
+        <Box
+          sx={{ width: '100%', height: '100%', display: 'flex', justifyContent: 'center', mt: 3 }}
+        >
+          <QRCodeSVG size={400} value={id || ''} />
         </Box>
       </Paper>
     </Container>

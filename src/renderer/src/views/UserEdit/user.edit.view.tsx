@@ -21,54 +21,68 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Box
+  Box,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  Switch
 } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import DeleteIcon from '@mui/icons-material/Delete'
 import { useCheckinApi } from '@renderer/hooks/checkin.api'
 import { useEffect, useState } from 'react'
-import { useUserApi } from '@renderer/hooks/user.api'
-import { BeltColor, Checkins, GreenevilleBJJUser } from '@renderer/types/users.types'
+import { usePromotionApi, useUserApi } from '@renderer/hooks/user.api'
+import { BeltColor, Checkin, GreenevilleBJJUser, Promotion } from '@renderer/types/users.types'
 import { adultOrChildBelt } from '@renderer/components/belt/all.belts.component'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
 import dayjs from 'dayjs'
 import { UserCheckinTable } from '../Checkin/components/user.checkin.table'
 import { DatePicker, DateTimePicker } from '@mui/x-date-pickers'
 import { formatPhoneNumber } from '@renderer/helpers/strings.helper'
+import { RankDialog } from './components/promotion.dialog.component'
+import { GreenevilleBJJObject } from '@renderer/types/base.types'
+import { QrCode2 } from '@mui/icons-material'
 
 export const UserEdit = () => {
   const { id } = useParams()
   const navigate = useNavigate()
 
   const {
-    fetchCheckinsThisMonth,
-    fetchCheckinsLastMonth,
-    fetchCheckinsAtCurrentRank,
-    fetchCheckinsByUserId,
+    fetchThisMonth,
+    fetchCheckinsByRank,
+    fetchCheckinsByUser,
     manualCreateCheckin,
     deleteCheckin
   } = useCheckinApi()
 
   const { fetchUserById, updateUser, deleteUser, isLoading } = useUserApi()
 
+  const { fetchPromotions, deletePromotion } = usePromotionApi()
+
   const [user, setUser] = useState<GreenevilleBJJUser | null>(null)
-  const [allCheckins, setAllCheckins] = useState<Checkins[]>([])
-  const [checkinsThisMonth, setCheckinsThisMonth] = useState<Checkins[]>([])
-  const [checkinsLastMonth, setCheckinsLastMonth] = useState<Checkins[]>([])
-  const [checkinsAtCurrentRank, setCheckinsAtCurrentRank] = useState<Checkins[]>([])
+  const [allCheckins, setAllCheckins] = useState<Checkin[]>([])
+  const [checkinsThisMonth, setCheckinsThisMonth] = useState<Checkin[]>([])
+  const [checkinsLastMonth, setCheckinsLastMonth] = useState<Checkin[]>([])
+  const [checkinsAtCurrentRank, setCheckinsAtCurrentRank] = useState<Checkin[]>([])
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [manualCheckinOpen, setManualCheckinOpen] = useState(false)
-  const [stripes, setStripes] = useState(0)
-  const [belt, setBelt] = useState(BeltColor.WHITE)
+  const [openRankDialog, setOpenRankDialog] = useState(false)
+  const [allPromotions, setAllPromotions] = useState<Promotion[]>([])
 
   // Date range filter state
   const [fromDate, setFromDate] = useState<string>('')
   const [toDate, setToDate] = useState<string>('')
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<GreenevilleBJJObject>({
     firstName: '',
     lastName: '',
     birthday: new Date(),
     email: '',
-    phone: ''
+    phone: '',
+    hasSignedWaiver: false
   })
   const [manualCheckinForm, setManualCheckinForm] = useState({
     belt: BeltColor.WHITE,
@@ -81,48 +95,46 @@ export const UserEdit = () => {
     ;(async () => {
       const currentUser = await fetchUserById(id)
 
-      const thisMonth = await fetchCheckinsThisMonth(id)
-      setCheckinsThisMonth(thisMonth)
+      setAllPromotions(currentUser.promotions)
+      setCheckinsThisMonth(currentUser.checkinsThisMonth)
+      setCheckinsLastMonth(currentUser.checkinsLastMonth)
+      setCheckinsAtCurrentRank(currentUser.checkinsAtRank)
 
-      const lastMonth = await fetchCheckinsLastMonth(id)
-      setCheckinsLastMonth(lastMonth)
-
-      const currentRank = await fetchCheckinsAtCurrentRank(
-        id,
-        currentUser.belt,
-        currentUser.stripes
-      )
-      setCheckinsAtCurrentRank(currentRank)
       setUser(currentUser)
       setFormData(currentUser)
       setManualCheckinForm((prev) => ({
         ...prev,
-        belt: currentUser.belt,
-        stripes: currentUser.stripes
+        belt: currentUser.rank.belt,
+        stripes: currentUser.rank.stripes
       }))
-      setStripes(currentUser.stripes)
-      setBelt(currentUser.belt)
-      const checks = await fetchCheckinsByUserId(id)
+      const checks = await fetchCheckinsByUser(id)
       setAllCheckins(checks)
     })()
   }, [id])
 
   const handleGoBack = () => navigate('/members')
 
+  const handleDeletePromotion = async (promotionId: string) => {
+    await deletePromotion(promotionId)
+  }
+
   const handleFilter = async () => {
     if (!id) return
-    const filtered = await fetchCheckinsByUserId(id, fromDate || undefined, toDate || undefined)
+    const filtered = await fetchCheckinsByUser(id, fromDate || undefined, toDate || undefined)
     setAllCheckins(filtered)
   }
 
   const handleSubmit = async () => {
     if (!id || !user) return
-    await updateUser(id, {
+    const transformedData = {
       ...formData,
-      birthday: dayjs(formData.birthday).toISOString(),
-      belt,
-      stripes
-    })
+      birthday: dayjs(formData.birthday).toISOString()
+    }
+
+    delete transformedData.rank
+
+    await updateUser(id, transformedData)
+
     navigate('/members')
   }
 
@@ -131,120 +143,87 @@ export const UserEdit = () => {
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Paper sx={{ p: 3, position: 'relative' }}>
-        <Button
-          onClick={handleGoBack}
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          sx={{ position: 'absolute', top: 16, left: 16 }}
-        >
-          Go Back
-        </Button>
+        <Box>
+          <Button
+            onClick={handleGoBack}
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+            sx={{ position: 'absolute', top: 16, left: 16 }}
+          >
+            Go Back
+          </Button>
+          <Button
+            variant="contained"
+            sx={{ position: 'absolute', top: 16, right: 16 }}
+            onClick={() => {
+              navigate(`/qr/${id}`)
+            }}
+          >
+            <QrCode2 sx={{ fontSize: 40 }} />
+          </Button>
+        </Box>
 
         <Typography variant="h4" align="center" gutterBottom>
           Edit Member
         </Typography>
 
-        <Grid container spacing={3}>
-          <Grid sx={{ width: '50%' }}>
-            <Typography variant="h6" gutterBottom>
-              Personal Info
-            </Typography>
-            <Stack spacing={2}>
-              <TextField
-                label="First Name"
-                value={formData.firstName}
-                onChange={(e) => setFormData((prev) => ({ ...prev, firstName: e.target.value }))}
-                fullWidth
-              />
-              <TextField
-                label="Last Name"
-                value={formData.lastName}
-                onChange={(e) => setFormData((prev) => ({ ...prev, lastName: e.target.value }))}
-                fullWidth
-              />
-              <TextField
-                label="Email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                fullWidth
-              />
-              <TextField
-                label="Phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, phone: formatPhoneNumber(e.target.value) }))
-                }
-                fullWidth
-              />
-              <DatePicker
-                label="Birthday"
-                value={dayjs(formData.birthday)}
-                onChange={(value) => {
-                  setFormData((prev) => ({
-                    ...prev,
-                    birthday: value?.toDate() || new Date()
-                  }))
-                }}
-              />
-            </Stack>
-          </Grid>
-
-          <Divider orientation="vertical" flexItem />
-
-          <Grid columns={6}>
-            <Typography variant="h6" gutterBottom>
-              Rank Info
-            </Typography>
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Belt</InputLabel>
-              <Select
-                label="Belt"
-                value={belt}
-                onChange={(e) => setBelt(e.target.value as BeltColor)}
-              >
-                {adultOrChildBelt(dayjs(formData.birthday).toDate()).map((b) => (
-                  <MenuItem key={b} value={b}>
-                    <BeltIcon belt={b} /> {b}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormLabel>Stripes</FormLabel>
-            <RadioGroup row value={stripes} onChange={(e) => setStripes(Number(e.target.value))}>
-              {Array.from({ length: belt === BeltColor.BLACK ? 7 : 5 }).map((_, i) => (
-                <FormControlLabel key={i} value={i} control={<Radio />} label={i} />
-              ))}
-            </RadioGroup>
-            <Stack direction={'column'}>
-              {user && (
-                <div
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center'
-                  }}
-                >
-                  <Typography>Current Belt</Typography>
-                  <BeltIcon belt={user?.belt} stripes={user?.stripes} scale={3} />
-                </div>
-              )}
-              <div
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center'
-                }}
-              >
-                <Typography>New Belt</Typography>
-                <BeltIcon belt={belt} stripes={stripes} scale={3} />
-              </div>
-            </Stack>
-          </Grid>
+        <Grid>
+          <Typography variant="h6" gutterBottom>
+            Personal Info
+          </Typography>
+          <Stack spacing={2}>
+            <TextField
+              label="First Name"
+              value={formData.firstName}
+              onChange={(e) => setFormData((prev) => ({ ...prev, firstName: e.target.value }))}
+              fullWidth
+            />
+            <TextField
+              label="Last Name"
+              value={formData.lastName}
+              onChange={(e) => setFormData((prev) => ({ ...prev, lastName: e.target.value }))}
+              fullWidth
+            />
+            <TextField
+              label="Email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+              fullWidth
+            />
+            <TextField
+              label="Phone"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, phone: formatPhoneNumber(e.target.value) }))
+              }
+              fullWidth
+            />
+            <DatePicker
+              label="Birthday"
+              value={dayjs(formData.birthday)}
+              onChange={(value) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  birthday: value?.toDate() || new Date()
+                }))
+              }}
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.hasSignedWaiver}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, hasSignedWaiver: e.target.checked }))
+                  }
+                />
+              }
+              label="Signed Waiver"
+            />
+          </Stack>
         </Grid>
+
         <Stack direction="row" spacing={3} sx={{ mt: 3 }}>
           <Button
             color="error"
@@ -259,16 +238,6 @@ export const UserEdit = () => {
             Save Changes
           </Button>
         </Stack>
-        <Button
-          variant="contained"
-          fullWidth
-          sx={{ mt: 3 }}
-          onClick={() => {
-            navigate(`/qr/${id}`)
-          }}
-        >
-          Generate QR Code
-        </Button>
 
         <Paper sx={{ mt: 4, p: 2 }}>
           <Stack
@@ -335,8 +304,19 @@ export const UserEdit = () => {
             checkins={allCheckins}
             handleDeleteCheckin={async (checkinId: string) => {
               try {
-                await deleteCheckin(user!.id, checkinId)
-                const checks = await fetchCheckinsByUserId(id!)
+                await deleteCheckin(checkinId)
+                if (!user) return
+                const thisMonth = await fetchThisMonth(user.id)
+
+                setCheckinsThisMonth(thisMonth)
+
+                const currentRank = await fetchCheckinsByRank(
+                  user.id,
+                  user.rank.belt,
+                  user.rank.stripes
+                )
+                setCheckinsAtCurrentRank(currentRank)
+                const checks = await fetchCheckinsByUser(id!)
                 setAllCheckins(checks)
               } catch (error) {
                 console.error(error)
@@ -344,91 +324,209 @@ export const UserEdit = () => {
             }}
           />
         </Paper>
-      </Paper>
-      <Dialog open={manualCheckinOpen} onClose={() => setManualCheckinOpen(false)}>
-        <DialogTitle>Manual Checkin</DialogTitle>
-        <DialogContent>
-          <Typography>Rank</Typography>
-          <FormControl fullWidth>
-            <InputLabel id="belt-rank">Belt</InputLabel>
-            <Select
-              labelId="belt-rank"
-              id="belt-rank"
-              value={manualCheckinForm.belt}
-              label="Belt"
-              onChange={(e) => console.log(e.target.value)}
-            >
-              {adultOrChildBelt(dayjs(formData.birthday).toDate()).map((belt, index) => (
-                <MenuItem key={index} value={belt}>
-                  <BeltIcon belt={belt} />
-                </MenuItem>
-              ))}
-            </Select>
-            {manualCheckinForm.belt !== BeltColor.RED &&
-              manualCheckinForm.belt !== BeltColor.RED_WHITE &&
-              manualCheckinForm.belt !== BeltColor.RED_BLACK && (
-                <>
-                  <FormLabel id="stripes">Stripes</FormLabel>
-                  <RadioGroup
-                    aria-labelledby="stripes"
-                    defaultValue={user?.stripes}
-                    name="stripes"
-                    row
-                    onChange={(e) => console.log(e.target.value)}
-                  >
-                    {Array.from(
-                      { length: manualCheckinForm.belt === BeltColor.BLACK ? 7 : 5 },
-                      (_value, index) => (
-                        <FormControlLabel
-                          key={index}
-                          value={index}
-                          control={<Radio />}
-                          label={index}
-                        />
-                      )
-                    )}
-                  </RadioGroup>
-                </>
-              )}
-            <DateTimePicker
-              label="Checkin Date"
-              value={dayjs(manualCheckinForm.checkedAt)}
-              onChange={(value) =>
-                setManualCheckinForm((prev) => ({
-                  ...prev,
-                  checkedAt: value?.toDate() || new Date()
-                }))
-              }
-            />
-          </FormControl>
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Box display="flex" justifyContent="space-between" width={'100%'}>
-            <Button onClick={() => setManualCheckinOpen(false)} variant="outlined" color="primary">
-              Cancel
-            </Button>
-            <Button
-              onClick={async () => {
-                try {
-                  await manualCreateCheckin(id!, {
-                    checkedAt: dayjs(manualCheckinForm.checkedAt).toISOString(),
-                    belt: manualCheckinForm.belt,
-                    stripes: manualCheckinForm.stripes
-                  })
-                  const checks = await fetchCheckinsByUserId(id!)
-                  setAllCheckins(checks)
-                  setManualCheckinOpen(false)
-                } catch (error) {
-                  console.error(error)
-                }
+        <Paper sx={{ mt: 4, p: 2 }}>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+            flexWrap="wrap"
+            mb={2}
+          >
+            <Typography variant="h6" gutterBottom>
+              Promotions
+            </Typography>
+            <TableContainer
+              component={Paper}
+              sx={{
+                mt: 3,
+                width: '100%',
+                height: 400,
+                marginBottom: '10px',
+                overflow: 'auto'
               }}
-              variant="contained"
             >
-              Checkin
+              <Table stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Promotion Date</TableCell>
+                    <TableCell>Belt</TableCell>
+                    <TableCell>Stripes</TableCell>
+                    {!!handleDeletePromotion && (
+                      <TableCell align="right">
+                        <IconButton onClick={() => console.log('Delete clicked')} color="error">
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {allPromotions.map((row: Promotion, idx: number) => (
+                    <TableRow key={idx}>
+                      <TableCell>{dayjs(new Date(row.promotedAt)).format('MM/DD/YYYY')}</TableCell>
+                      <TableCell>
+                        <BeltIcon belt={row.belt} stripes={row.stripes} />
+                      </TableCell>
+                      <TableCell>{row.stripes}</TableCell>
+
+                      <TableCell align="right">
+                        <IconButton
+                          disabled={allPromotions.length === 1}
+                          onClick={async (e) => {
+                            e.stopPropagation()
+                            if (!user) return
+                            await handleDeletePromotion(row.id)
+
+                            const allPromotionsResponse = await fetchPromotions({ userId: user.id })
+
+                            setAllPromotions(allPromotionsResponse)
+                          }}
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={() => {
+                setOpenRankDialog(true)
+              }}
+            >
+              Promote
             </Button>
-          </Box>
-        </DialogActions>
-      </Dialog>
+            {openRankDialog && user && (
+              <RankDialog
+                open={openRankDialog}
+                user={user}
+                onClose={() => setOpenRankDialog(false)}
+                onSave={async () => {
+                  if (!user) return
+                  const allPromotionsResponse = await fetchPromotions({ userId: user.id })
+                  setAllPromotions(allPromotionsResponse)
+                  setOpenRankDialog(false)
+                }}
+              />
+            )}
+          </Stack>
+        </Paper>
+      </Paper>
+
+      {manualCheckinOpen && (
+        <Dialog open={manualCheckinOpen} onClose={() => setManualCheckinOpen(false)}>
+          <DialogTitle>Manual Checkin</DialogTitle>
+          <DialogContent>
+            <Typography>Rank</Typography>
+            <FormControl fullWidth>
+              <InputLabel id="belt-rank">Belt</InputLabel>
+              <Select
+                labelId="belt-rank"
+                id="belt-rank"
+                value={manualCheckinForm.belt}
+                label="Belt"
+                onChange={(e) =>
+                  setManualCheckinForm((prev) => ({ ...prev, belt: e.target.value }))
+                }
+              >
+                {adultOrChildBelt(dayjs(formData.birthday).toDate()).map((belt, index) => (
+                  <MenuItem key={index} value={belt}>
+                    <BeltIcon belt={belt} />
+                  </MenuItem>
+                ))}
+              </Select>
+              {manualCheckinForm.belt !== BeltColor.RED &&
+                manualCheckinForm.belt !== BeltColor.RED_WHITE &&
+                manualCheckinForm.belt !== BeltColor.RED_BLACK && (
+                  <>
+                    <FormLabel id="stripes">Stripes</FormLabel>
+                    <RadioGroup
+                      aria-labelledby="stripes"
+                      defaultValue={manualCheckinForm.stripes}
+                      name="stripes"
+                      row
+                      onChange={(e) =>
+                        setManualCheckinForm((prev) => ({
+                          ...prev,
+                          stripes: parseInt(e.target.value)
+                        }))
+                      }
+                    >
+                      {Array.from(
+                        { length: manualCheckinForm.belt === BeltColor.BLACK ? 7 : 5 },
+                        (_value, index) => (
+                          <FormControlLabel
+                            key={index}
+                            value={index}
+                            control={<Radio />}
+                            label={index}
+                          />
+                        )
+                      )}
+                    </RadioGroup>
+                  </>
+                )}
+              <DateTimePicker
+                label="Checkin Date"
+                value={dayjs(manualCheckinForm.checkedAt)}
+                onChange={(value) =>
+                  setManualCheckinForm((prev) => ({
+                    ...prev,
+                    checkedAt: value?.toDate() || new Date()
+                  }))
+                }
+              />
+            </FormControl>
+          </DialogContent>
+          <DialogActions sx={{ p: 2 }}>
+            <Box display="flex" justifyContent="space-between" width={'100%'}>
+              <Button
+                onClick={() => setManualCheckinOpen(false)}
+                variant="outlined"
+                color="primary"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    if (!id) return
+                    await manualCreateCheckin(
+                      id!,
+                      manualCheckinForm.belt,
+                      manualCheckinForm.stripes,
+                      dayjs(manualCheckinForm.checkedAt).toISOString()
+                    )
+
+                    const thisMonth = await fetchThisMonth(id)
+                    setCheckinsThisMonth(thisMonth)
+
+                    const currentRank = await fetchCheckinsByRank(
+                      id,
+                      manualCheckinForm.belt,
+                      manualCheckinForm.stripes
+                    )
+                    setCheckinsAtCurrentRank(currentRank)
+                    const checks = await fetchCheckinsByUser(id!)
+                    setAllCheckins(checks)
+                    setManualCheckinOpen(false)
+                  } catch (error) {
+                    console.error(error)
+                  }
+                }}
+                variant="contained"
+              >
+                Checkin
+              </Button>
+            </Box>
+          </DialogActions>
+        </Dialog>
+      )}
 
       <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
         <DialogTitle>Delete User</DialogTitle>

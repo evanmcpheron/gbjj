@@ -1,345 +1,193 @@
-// checkin.api.ts
 import { useState, useEffect, useCallback } from 'react'
-import type { BeltColor, Checkins } from '@renderer/types/users.types'
+import type { BeltColor, Checkin } from '@renderer/types/users.types'
 import { useDB } from '@renderer/context/db.context'
 import { v4 as uuid } from 'uuid'
 import dayjs from 'dayjs'
 
 export const useCheckinApi = () => {
-  const { checkin: apiCheckin, user: apiUser } = useDB()
-  const [isLoading, setIsLoading] = useState(false)
-  const [allCheckins, setAllCheckins] = useState<Checkins[]>([])
-  const [checkinLookup, setCheckinLookup] = useState<Checkins | null>(null)
+  const { checkin: api } = useDB()
+  const [loading, setLoading] = useState(false)
 
-  const getMonthRange = (date: Date) => {
-    const start = new Date(date.getFullYear(), date.getMonth(), 1)
-    const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999)
-    return { start, end }
-  }
-
-  const fetchAllCheckins = useCallback(
-    async (options?: { skip?: number; limit?: number; filter?: Partial<Checkins> }) => {
-      setIsLoading(true)
+  // Wrapper to manage loading state
+  const withLoading =
+    <T extends any[]>(fn: (...args: T) => Promise<any>) =>
+    async (...args: T) => {
+      setLoading(true)
       try {
-        if (!apiCheckin) {
-          setAllCheckins([])
-          return
-        }
-
-        let query = apiCheckin.find()
-        if (options?.filter) {
-          Object.entries(options.filter).forEach(([key, value]) => {
-            query = query.where(key as any).eq(value as any)
-          })
-        }
-        if (options?.skip !== undefined) query = query.skip(options.skip)
-        if (options?.limit !== undefined) query = query.limit(options.limit)
-        const docs = await query.exec()
-        setAllCheckins(docs.map((doc) => doc.toJSON()))
-      } catch (err) {
-        console.error(err)
+        return await fn(...args)
       } finally {
-        setIsLoading(false)
+        setLoading(false)
       }
+    }
+
+  const fetchCheckins = useCallback(
+    async (
+      opts: {
+        userId?: string
+        from?: string
+        to?: string
+        belt?: BeltColor
+        stripes?: number
+        skip?: number
+        limit?: number
+      } = {}
+    ) => {
+      if (!api) return []
+      let q = api.find()
+      if (opts.userId) q = q.where('userId').eq(opts.userId)
+      if (opts.belt) q = q.where('belt').eq(opts.belt)
+      if (opts.stripes !== undefined) q = q.where('stripes').eq(opts.stripes)
+      if (opts.from) q = q.where('checkedAt').gte(opts.from)
+      if (opts.to) q = q.where('checkedAt').lte(opts.to)
+      if (opts.skip !== undefined) q = q.skip(opts.skip)
+      if (opts.limit !== undefined) q = q.limit(opts.limit)
+
+      const docs = await q.sort({ checkedAt: 'desc' }).exec()
+      return docs.map((d) => d.toJSON())
     },
-    [apiCheckin]
+    [api]
   )
 
-  const fetchCheckinById = useCallback(
-    async (id: string) => {
-      setIsLoading(true)
-      try {
-        if (!apiCheckin) {
-          setCheckinLookup(null)
-          return
-        }
-
-        const doc = await apiCheckin.findOne(id).exec()
-        const data = doc ? doc.toJSON() : null
-        setCheckinLookup(data)
-        return data
-      } catch (err) {
-        console.error(err)
-        return null
-      } finally {
-        setIsLoading(false)
-      }
+  /**
+   * Fetch the most recent check-in for a user
+   */
+  const fetchLastCheckin = useCallback(
+    async (userId: string) => {
+      if (!api) return null
+      const docs = await api
+        .find()
+        .where('userId')
+        .eq(userId)
+        .sort({ checkedAt: 'desc' })
+        .limit(1)
+        .exec()
+      return docs[0]?.toJSON() ?? null
     },
-    [apiCheckin]
+    [api]
   )
 
-  const createCheckin = useCallback(
-    async (userId: string, checkinData: Omit<Checkins, 'id' | 'checkedAt'>) => {
-      setIsLoading(true)
-      try {
-        if (!apiUser) return
-        const userDoc = await apiUser.findOne(userId).exec()
-        if (!userDoc) throw new Error('User not found')
+  const fetchBasicCheckinData = useCallback(
+    async (userId: string) => {
+      const startThisMonth = dayjs().startOf('month').toISOString()
+      const startLastMonth = dayjs().startOf('month').subtract(1, 'month').toISOString()
+      const endThisMonth = dayjs().endOf('month').toISOString()
+      const endLastMonth = dayjs().endOf('month').subtract(1, 'month').toISOString()
+      const allCheckins = await fetchCheckins({ userId })
+      const thisMonthCheckins = await fetchCheckins({
+        userId,
+        from: startThisMonth,
+        to: endThisMonth
+      })
 
-        const newCheckin: Checkins = {
-          id: uuid(),
-          checkedAt: new Date().toISOString(),
-          belt: checkinData.belt,
-          stripes: checkinData.stripes
-        }
+      const lastMonthCheckins = await fetchCheckins({
+        userId,
+        from: startLastMonth,
+        to: endLastMonth
+      })
 
-        // Merge in the new checkin and overwrite the whole doc:
-        const updated = {
-          ...userDoc.toJSON(),
-          checkins: [...userDoc.checkins, newCheckin]
-        }
-        await apiUser.upsert(updated)
-
-        return newCheckin
-      } finally {
-        setIsLoading(false)
-      }
+      return { allCheckins, thisMonthCheckins, lastMonthCheckins }
     },
-    [apiUser]
+    [api]
   )
-  const manualCreateCheckin = useCallback(
-    async (userId: string, checkinData: Omit<Checkins, 'id'>) => {
-      setIsLoading(true)
-      try {
-        if (!apiUser) return
-        const userDoc = await apiUser.findOne(userId).exec()
-        if (!userDoc) throw new Error('User not found')
 
-        const newCheckin: Checkins = {
-          id: uuid(),
-          checkedAt: checkinData.checkedAt,
-          belt: checkinData.belt,
-          stripes: checkinData.stripes
-        }
-
-        // Merge in the new checkin and overwrite the whole doc:
-        const updated = {
-          ...userDoc.toJSON(),
-          checkins: [...userDoc.checkins, newCheckin]
-        }
-        await apiUser.upsert(updated)
-
-        return newCheckin
-      } finally {
-        setIsLoading(false)
+  const upsertCheckin = useCallback(
+    async (
+      userId: string,
+      data: { belt: BeltColor; stripes: number; checkedAt?: string },
+      opts: { enforceWindow?: boolean } = { enforceWindow: true }
+    ) => {
+      if (!api) return
+      if (opts.enforceWindow) {
+        const last = await fetchLastCheckin(userId)
+        const elapsed = Date.now() - Date.parse(last?.checkedAt ?? '0')
+        const windowMs = 12 * 60 * 60 * 1000
+        if (elapsed < windowMs) return
       }
+      const now = new Date().toISOString()
+      const doc: Checkin = {
+        id: uuid(),
+        userId,
+        belt: data.belt,
+        stripes: data.stripes,
+        checkedAt: data.checkedAt ?? now,
+        createdAt: now,
+        updatedAt: now
+      }
+      await api.insert(doc)
+      return doc
     },
-    [apiUser]
+    [api, fetchLastCheckin]
   )
 
   const updateCheckin = useCallback(
-    async (id: string, updates: Partial<Checkins>) => {
-      setIsLoading(true)
-      try {
-        if (!apiCheckin) {
-          return
-        }
-        const doc = await apiCheckin.findOne(id).exec()
-        if (!doc) throw new Error('Checkin not found')
-        await doc.atomicUpdate((old) => ({ ...old, ...updates }))
-        return doc.toJSON()
-      } finally {
-        setIsLoading(false)
-      }
+    async (id: string, updates: Partial<Checkin>) => {
+      if (!api) return
+      const doc = await api.findOne(id).exec()
+      if (!doc) throw new Error('Checkin not found')
+      await doc.atomicUpdate((old) => ({ ...old, ...updates }))
+      return doc.toJSON()
     },
-    [apiCheckin]
+    [api]
   )
 
   const deleteCheckin = useCallback(
-    async (userId: string, checkinId: string) => {
-      setIsLoading(true)
-      try {
-        if (!apiUser) return false
+    async (id: string) => {
+      if (!api) return false
 
-        const userDoc = await apiUser.findOne(userId).exec()
-        if (!userDoc) throw new Error('User not found')
-
-        await userDoc.update({
-          $set: {
-            checkins: userDoc.checkins.filter((c) => c.id !== checkinId)
-          }
-        })
-
-        return true
-      } catch (error) {
-        console.error('Failed to delete checkin:', error)
-        return false
-      } finally {
-        setIsLoading(false)
-      }
+      const doc = await api.findOne(id).exec()
+      await doc.remove()
+      return true
     },
-    [apiUser]
-  )
-
-  const fetchCheckinsThisMonth = useCallback(
-    async (userId: string): Promise<Checkins[]> => {
-      setIsLoading(true)
-      try {
-        if (!apiUser) return []
-        const userDoc = await apiUser.findOne(userId).exec()
-        if (!userDoc) return []
-        const { start, end } = getMonthRange(new Date())
-        return userDoc.checkins.filter((c) => {
-          const t = Date.parse(c.checkedAt)
-          return t >= start.getTime() && t <= end.getTime()
-        })
-      } catch (err) {
-        console.error(err)
-        return []
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [apiUser]
-  )
-
-  const fetchCheckinsByUserId = useCallback(
-    async (userId: string, fromIso?: string, toIso?: string): Promise<Checkins[]> => {
-      setIsLoading(true)
-      try {
-        if (!apiUser) return []
-        const userDoc = await apiUser.findOne(userId).exec()
-        if (!userDoc) return []
-
-        // parse cutoff timestamps if provided
-        const fromTs = fromIso ? Date.parse(fromIso) : Number.NEGATIVE_INFINITY
-        const toTs = toIso ? Date.parse(toIso) : Number.POSITIVE_INFINITY
-
-        return userDoc.checkins.filter((c) => {
-          const t = Date.parse(c.checkedAt)
-          return t >= fromTs && t <= toTs
-        })
-      } catch (err) {
-        console.error(err)
-        return []
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [apiUser]
-  )
-
-  const fetchCheckinsLastMonth = useCallback(
-    async (userId: string): Promise<Checkins[]> => {
-      setIsLoading(true)
-      try {
-        if (!apiUser) return []
-        const userDoc = await apiUser.findOne(userId).exec()
-        if (!userDoc) return []
-        const now = new Date()
-        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-        const { start, end } = getMonthRange(lastMonth)
-        return userDoc.checkins.filter((c) => {
-          const t = Date.parse(c.checkedAt)
-          return t >= start.getTime() && t <= end.getTime()
-        })
-      } catch (err) {
-        console.error(err)
-        return []
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [apiUser]
-  )
-
-  const fetchCheckinsAtCurrentRank = useCallback(
-    async (userId: string, belt: BeltColor, stripes: number): Promise<Checkins[]> => {
-      setIsLoading(true)
-      try {
-        if (!apiUser) return []
-        const userDoc = await apiUser.findOne(userId).exec()
-        if (!userDoc) return []
-        return userDoc.checkins.filter((c) => c.belt === belt && c.stripes === stripes)
-      } catch (err) {
-        console.error(err)
-        return []
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [apiUser]
-  )
-
-  const timeUntilNextCheckin = useCallback(
-    async (userId: string): Promise<number> => {
-      setIsLoading(true)
-      try {
-        if (!apiUser) return 0
-        const userDoc = await apiUser.findOne(userId).exec()
-        if (!userDoc || !userDoc.checkins.length) {
-          return 0
-        }
-
-        const lastTs = userDoc.checkins
-          .map((c) => Date.parse(c.checkedAt))
-          .reduce((a, b) => Math.max(a, b), 0)
-        const now = Date.now()
-        const windowMs = 12 * 60 * 60 * 1000
-
-        const elapsed = now - lastTs
-        return elapsed >= windowMs ? 0 : windowMs - elapsed
-      } catch (err) {
-        console.error(err)
-        return 0
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [apiUser]
-  )
-
-  const getNextCheckinTime = useCallback(
-    async (userId: string): Promise<string> => {
-      setIsLoading(true)
-      try {
-        if (!apiUser) return ''
-
-        const userDoc = await apiUser.findOne(userId).exec()
-        if (!userDoc) {
-          return dayjs().format('M/D/YYYY h:mm A')
-        }
-
-        const lastTs = userDoc.checkins
-          .map((c) => Date.parse(c.checkedAt))
-          .reduce((max, cur) => Math.max(max, cur), 0)
-
-        const nextAllowed = dayjs(lastTs).add(12, 'hour')
-
-        if (nextAllowed.isBefore(dayjs())) {
-          return dayjs().format('M/D/YYYY h:mm A')
-        }
-
-        return nextAllowed.format('M/D/YYYY h:mm A')
-      } catch (err) {
-        console.error(err)
-        return ''
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [apiUser]
+    [api]
   )
 
   useEffect(() => {
-    fetchAllCheckins()
-  }, [fetchAllCheckins])
+    withLoading(fetchCheckins)()
+  }, [fetchCheckins])
 
   return {
-    isLoading,
-    allCheckins,
-    checkinLookup,
-    fetchAllCheckins,
-    fetchCheckinById,
-    createCheckin,
-    manualCreateCheckin,
-    updateCheckin,
-    deleteCheckin,
-    fetchCheckinsThisMonth,
-    fetchCheckinsLastMonth,
-    fetchCheckinsAtCurrentRank,
-    timeUntilNextCheckin,
-    fetchCheckinsByUserId,
-    getNextCheckinTime
+    loading,
+    fetchCheckins: withLoading(fetchCheckins),
+    fetchBasicCheckinData: withLoading((userId: string) => {
+      return fetchBasicCheckinData(userId)
+    }),
+    fetchCheckinsByUser: withLoading((userId: string, fromDate?: string, toDate?: string) => {
+      return fetchCheckins({ userId, from: fromDate, to: toDate })
+    }),
+    fetchThisMonth: withLoading((userId: string) => {
+      const start = dayjs().startOf('month').toISOString()
+      const end = dayjs().endOf('month').toISOString()
+      return fetchCheckins({ userId, from: start, to: end })
+    }),
+    fetchCheckinsByRank: withLoading((userId: string, belt: BeltColor, stripes: number) => {
+      return fetchCheckins({ userId, belt, stripes })
+    }),
+    fetchLastMonth: withLoading((userId: string) => {
+      const start = dayjs().subtract(1, 'month').startOf('month').toISOString()
+      const end = dayjs().subtract(1, 'month').endOf('month').toISOString()
+      return fetchCheckins({ userId, from: start, to: end })
+    }),
+    fetchLastCheckin: withLoading(fetchLastCheckin),
+
+    createCheckin: withLoading((userId: string, belt: BeltColor, stripes: number) =>
+      upsertCheckin(userId, { belt, stripes }, { enforceWindow: true })
+    ),
+    manualCreateCheckin: withLoading(
+      (userId: string, belt: BeltColor, stripes: number, checkedAt: string) =>
+        upsertCheckin(userId, { belt, stripes, checkedAt }, { enforceWindow: false })
+    ),
+    updateCheckin: withLoading(updateCheckin),
+    deleteCheckin: withLoading(deleteCheckin),
+    timeUntilNextCheckin: withLoading(async (userId: string) => {
+      const last = await fetchLastCheckin(userId)
+      const elapsed = Date.now() - Date.parse(last?.checkedAt ?? '0')
+      const windowMs = 12 * 60 * 60 * 1000
+      return elapsed >= windowMs ? 0 : windowMs - elapsed
+    }),
+    getNextCheckinTime: withLoading(async (userId: string) => {
+      const last = await fetchLastCheckin(userId)
+      const nextTs = Math.max(Date.now(), Date.parse(last?.checkedAt ?? '0') + 12 * 60 * 60 * 1000)
+      return dayjs(nextTs).format('M/D/YYYY h:mm A')
+    })
   }
 }

@@ -12,6 +12,7 @@ import {
   RadioGroup,
   Select,
   SelectChangeEvent,
+  Switch,
   TextField,
   Typography
 } from '@mui/material'
@@ -20,7 +21,7 @@ import { adultOrChildBelt } from '@renderer/components/belt/all.belts.component'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
 import { BeltColor } from '@renderer/db/member.schema'
 import { formatPhoneNumber } from '@renderer/helpers/strings.helper'
-import { useUserApi } from '@renderer/hooks/user.api'
+import { usePromotionApi, useUserApi } from '@renderer/hooks/user.api'
 import { GreenevilleBJJObject } from '@renderer/types/base.types'
 import dayjs from 'dayjs'
 import { useState } from 'react'
@@ -36,23 +37,29 @@ const NewMembersView: React.FC = () => {
     gender: 'male',
     birthday: new Date(),
     email: '',
-    phone: ''
+    phone: '',
+    hasSignedWaiver: false
   })
 
   const { createUser } = useUserApi()
+  const { createPromotion } = usePromotionApi()
 
   const handleSubmit = async (e: GreenevilleBJJObject) => {
     e.preventDefault()
-    await createUser({
+    const createdUser = await createUser({
       firstName: formData.firstName,
       lastName: formData.lastName,
       email: formData.email,
       phone: formData.phone,
       gender: formData.gender,
       birthday: formData.birthday.toISOString(),
+      hasSignedWaiver: formData.hasSignedWaiver
+    })
+
+    await createPromotion({
+      userId: createdUser.id,
       belt: formData.belt,
-      stripes: formData.stripes,
-      checkins: []
+      stripes: formData.stripes
     }).then(() => {
       navigate('/members')
     })
@@ -137,6 +144,18 @@ const NewMembersView: React.FC = () => {
                 birthday: value?.toDate() || new Date()
               }))
             }}
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                sx={{ my: 4 }}
+                checked={formData.hasSignedWaiver}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, hasSignedWaiver: e.target.checked }))
+                }
+              />
+            }
+            label="Signed Waiver"
           />
         </Box>
         <Typography>Rank</Typography>

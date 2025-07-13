@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { autoUpdater } from 'electron-updater'
 import icon from '../../resources/icon.png?asset'
 import { exposeIpcMainRxStorage } from 'rxdb/plugins/electron'
 import { getRxStorageMemory } from 'rxdb/plugins/storage-memory'
@@ -30,6 +31,8 @@ function createWindow(): void {
     mainWindow.show()
   })
 
+  mainWindow.loadFile(join(__dirname, 'index.html'))
+
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
@@ -51,6 +54,18 @@ app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
+  autoUpdater.checkForUpdatesAndNotify()
+  // or autoUpdater.checkForUpdates() if you want manual control
+
+  autoUpdater.on('update-available', () => {
+    // optional: inform the user an update is downloading
+  })
+  autoUpdater.on('update-downloaded', () => {
+    // You can install immediately:
+    autoUpdater.quitAndInstall()
+    // or prompt the user first
+  })
+
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
   // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
@@ -59,7 +74,6 @@ app.whenReady().then(() => {
   })
 
   createWindow()
-  mainWindow.webContents.openDevTools()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Menu } from './views/menu.view'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { HashRouter as Router, Routes, Route } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { LocalizationProvider } from '@mui/x-date-pickers'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
@@ -12,6 +12,8 @@ import { DBProvider } from './context/db.context'
 import { UserEdit } from './views/UserEdit/user.edit.view'
 import { QR } from './views/UserEdit/qr.view'
 import { Button } from '@mui/material'
+import EmergencyContactsView from './views/EmergencyContact/emergency.contact.view'
+import { BackupView } from './views/Backup/backup.view'
 
 const theme = createTheme({
   colorSchemes: {
@@ -196,9 +198,12 @@ const App = () => {
               <Route key={1} path={'/'} element={<CheckIn />} />
               <Route key={2} path={'/new-member'} element={<NewMembersView />} />
               <Route key={3} path={'/members'} element={<Members />} />
-              <Route key={3} path={'/check-in/:id'} element={<CheckInUser />} />
-              <Route key={3} path={'/user/:id'} element={<UserEdit />} />
-              <Route key={3} path={'/qr/:id'} element={<QR />} />
+              <Route key={4} path={'/check-in/:id'} element={<CheckInUser />} />
+              <Route key={5} path={'/user/:id'} element={<UserEdit />} />
+              <Route key={6} path={'/qr/:id'} element={<QR />} />
+              <Route key={7} path={'/emergency/:id'} element={<EmergencyContactsView />} />
+              <Route key={8} path={'/backup'} element={<BackupView />} />
+              <Route key={9} path="*" element={<div>404—page not found</div>} />
             </Routes>
           </Router>
         </LocalizationProvider>

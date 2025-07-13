@@ -18,7 +18,8 @@ import {
   TablePagination,
   TextField
 } from '@mui/material'
-import { EditMemberDialog } from './members.promote.dialog.component'
+import CheckBoxIcon from '@mui/icons-material/CheckBox'
+import ErrorIcon from '@mui/icons-material/Error'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
 import { GreenevilleBJJUser } from '@renderer/types/users.types'
 import { useUserApi } from '@renderer/hooks/user.api'
@@ -27,8 +28,6 @@ import { adultFilter } from '@renderer/components/belt/all.belts.component'
 import dayjs from 'dayjs'
 
 export default function Members() {
-  const [showPromotionDialog, setShowPromotionDialog] = useState(false)
-  const [selectedMember, setSelectedMember] = useState<GreenevilleBJJUser | null>(null)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [filterMode, setFilterMode] = useState<'all' | 'adult' | 'female' | 'kids'>('all')
@@ -39,7 +38,7 @@ export default function Members() {
 
   useEffect(() => {
     fetchAllUsers()
-  }, [selectedMember])
+  }, [])
 
   useEffect(() => {
     let users = [...allUsers]
@@ -75,11 +74,6 @@ export default function Members() {
   }, [allUsers])
 
   const navigate = useNavigate()
-
-  const handleCloseDialog = () => {
-    setShowPromotionDialog(false)
-    setSelectedMember(null)
-  }
 
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage)
@@ -129,9 +123,12 @@ export default function Members() {
               <TableRow>
                 <TableCell align="left">Name</TableCell>
                 <TableCell align="left">Email</TableCell>
-                <TableCell align="left">Phone</TableCell>
-                <TableCell align="left">Rank</TableCell>
-                <TableCell align="left">Actions</TableCell>
+                <TableCell align="center">Phone</TableCell>
+                <TableCell align="center">Signed Waiver</TableCell>
+                <TableCell align="center">Promotion Date</TableCell>
+                <TableCell align="center">Rank</TableCell>
+                <TableCell align="center">Edit</TableCell>
+                <TableCell align="center">Emergency Contact</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -144,11 +141,21 @@ export default function Members() {
                         {user.firstName} {user.lastName}
                       </TableCell>
                       <TableCell align="left">{user.email}</TableCell>
-                      <TableCell align="left">{user.phone}</TableCell>
-                      <TableCell align="left">
-                        <BeltIcon belt={user.belt} stripes={user.stripes} />
+                      <TableCell align="center">{user.phone}</TableCell>
+                      <TableCell align="center">
+                        {user.hasSignedWaiver ? (
+                          <CheckBoxIcon color="success" />
+                        ) : (
+                          <ErrorIcon color="error" />
+                        )}
                       </TableCell>
-                      <TableCell align="left">
+                      <TableCell align="center">
+                        {dayjs(new Date(user.rank.promotedAt)).format('MM/DD/YYYY')}
+                      </TableCell>
+                      <TableCell align="center">
+                        <BeltIcon belt={user.rank.belt} stripes={user.rank.stripes} />
+                      </TableCell>
+                      <TableCell align="center">
                         <Button
                           variant="contained"
                           size="small"
@@ -158,6 +165,19 @@ export default function Members() {
                           }}
                         >
                           Edit
+                        </Button>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Button
+                          variant="contained"
+                          size="small"
+                          color="error"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/emergency/${user.id}`)
+                          }}
+                        >
+                          EMERGENCY CONTACT
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -176,13 +196,6 @@ export default function Members() {
           rowsPerPageOptions={[5, 10, 25, 50, 100]}
         />
       </Paper>
-      {selectedMember && (
-        <EditMemberDialog
-          open={showPromotionDialog}
-          selectedMember={selectedMember}
-          handleClose={handleCloseDialog}
-        />
-      )}
     </Container>
   )
 }
