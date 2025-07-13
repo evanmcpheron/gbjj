@@ -38,21 +38,27 @@ export const Menu: React.FC<MenuProps> = ({ showMenu, onClose }) => {
           </Typography>
           <Divider />
           <Stack spacing={2}>
-            <Button variant="contained" fullWidth href="/">
+            <Button onClick={() => onClose?.(false)} variant="contained" fullWidth href="#">
               Check In
             </Button>
-            <Button variant="contained" fullWidth href="/new-member">
+
+            <Button
+              onClick={() => onClose?.(false)}
+              variant="contained"
+              fullWidth
+              href="#new-member"
+            >
               New Member
             </Button>
-            <Button variant="contained" fullWidth href="/members">
+            <Button onClick={() => onClose?.(false)} variant="contained" fullWidth href="#members">
               Members
             </Button>
-            <Button variant="contained" fullWidth href="/backup">
+            <Button onClick={() => onClose?.(false)} variant="contained" fullWidth href="#backup">
               Backup
             </Button>
           </Stack>
           {onClose && (
-            <Button variant="outlined" fullWidth size="small" onClick={() => onClose(false)}>
+            <Button onClick={() => onClose?.(false)} variant="outlined" fullWidth size="small">
               Close
             </Button>
           )}

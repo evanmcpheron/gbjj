@@ -27,7 +27,7 @@ export const initDb = async () => {
     storage: wrappedValidateAjvStorage({
       storage: getRxStorageLocalstorage()
     }),
-    ignoreDuplicate: true
+    closeDuplicates: true
   })
 
   // await db.remove()

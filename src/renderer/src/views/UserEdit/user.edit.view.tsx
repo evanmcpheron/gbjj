@@ -375,7 +375,7 @@ export const UserEdit = () => {
                           disabled={allPromotions.length === 1}
                           onClick={async (e) => {
                             e.stopPropagation()
-                            if (!user || allPromotions.length > 1) return
+                            if (!user) return
                             await handleDeletePromotion(row.id)
 
                             const allPromotionsResponse = await fetchPromotions({ userId: user.id })

@@ -18,7 +18,6 @@ import {
   TablePagination,
   TextField
 } from '@mui/material'
-import { EditMemberDialog } from './members.promote.dialog.component'
 import CheckBoxIcon from '@mui/icons-material/CheckBox'
 import ErrorIcon from '@mui/icons-material/Error'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
@@ -29,8 +28,6 @@ import { adultFilter } from '@renderer/components/belt/all.belts.component'
 import dayjs from 'dayjs'
 
 export default function Members() {
-  const [showPromotionDialog, setShowPromotionDialog] = useState(false)
-  const [selectedMember, setSelectedMember] = useState<GreenevilleBJJUser | null>(null)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [filterMode, setFilterMode] = useState<'all' | 'adult' | 'female' | 'kids'>('all')
@@ -41,11 +38,10 @@ export default function Members() {
 
   useEffect(() => {
     fetchAllUsers()
-  }, [selectedMember])
+  }, [])
 
   useEffect(() => {
     let users = [...allUsers]
-    console.log(`🚀 ~ members.view.tsx:48 ~ useEffect ~ users: \n`, users)
 
     if (filterMode === 'adult') {
       users = users.filter((u) => adultFilter(dayjs(u.birthday).toDate()))
@@ -78,11 +74,6 @@ export default function Members() {
   }, [allUsers])
 
   const navigate = useNavigate()
-
-  const handleCloseDialog = () => {
-    setShowPromotionDialog(false)
-    setSelectedMember(null)
-  }
 
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage)
@@ -205,13 +196,6 @@ export default function Members() {
           rowsPerPageOptions={[5, 10, 25, 50, 100]}
         />
       </Paper>
-      {selectedMember && (
-        <EditMemberDialog
-          open={showPromotionDialog}
-          selectedMember={selectedMember}
-          handleClose={handleCloseDialog}
-        />
-      )}
     </Container>
   )
 }
