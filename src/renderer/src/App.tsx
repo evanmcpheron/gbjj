@@ -15,7 +15,7 @@ import { Button } from '@mui/material'
 import EmergencyContactsView from './views/EmergencyContact/emergency.contact.view'
 import { BackupView } from './views/Backup/backup.view'
 
-const theme = createTheme({
+export const theme = createTheme({
   colorSchemes: {
     dark: false
   },

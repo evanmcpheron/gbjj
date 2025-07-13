@@ -10,10 +10,11 @@ import {
   TableHead,
   TableRow,
   Paper,
-  TablePagination,
   IconButton
 } from '@mui/material'
 import dayjs from 'dayjs'
+import { StyledPagination } from '@renderer/views/Members/members.view'
+import { theme } from '@renderer/App'
 
 interface UserCheckinTableProps {
   checkins: Checkin[]
@@ -87,8 +88,8 @@ export const UserCheckinTable = ({ checkins, handleDeleteCheckin }: UserCheckinT
           </TableBody>
         </Table>
       </TableContainer>
-      <TablePagination
-        component="div"
+      <StyledPagination
+        theme={theme}
         count={checkins.length}
         page={page}
         onPageChange={handleChangePage}

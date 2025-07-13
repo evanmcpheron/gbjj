@@ -29,7 +29,8 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Switch
+  Switch,
+  FormHelperText
 } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import DeleteIcon from '@mui/icons-material/Delete'
@@ -41,11 +42,24 @@ import { adultOrChildBelt } from '@renderer/components/belt/all.belts.component'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
 import dayjs from 'dayjs'
 import { UserCheckinTable } from '../Checkin/components/user.checkin.table'
-import { DatePicker, DateTimePicker } from '@mui/x-date-pickers'
+import { DatePicker, DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers'
 import { formatPhoneNumber } from '@renderer/helpers/strings.helper'
 import { RankDialog } from './components/promotion.dialog.component'
-import { GreenevilleBJJObject } from '@renderer/types/base.types'
 import { QrCode2 } from '@mui/icons-material'
+import { joiResolver } from '@hookform/resolvers/joi'
+import { Controller, useForm } from 'react-hook-form'
+import { formSchema } from './user.edit.logic'
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+
+type FormValues = {
+  firstName: string
+  lastName: string
+  gender: 'male' | 'female'
+  email: string
+  phone: string
+  birthday: Date
+  hasSignedWaiver: boolean
+}
 
 export const UserEdit = () => {
   const { id } = useParams()
@@ -73,17 +87,30 @@ export const UserEdit = () => {
   const [openRankDialog, setOpenRankDialog] = useState(false)
   const [allPromotions, setAllPromotions] = useState<Promotion[]>([])
 
-  // Date range filter state
+  const {
+    control,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors }
+  } = useForm<FormValues>({
+    resolver: joiResolver(formSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      gender: 'male',
+      email: '',
+      phone: '',
+      birthday: new Date(),
+      hasSignedWaiver: false
+    }
+  })
+
+  const watchedBirthday = watch('birthday')
+
   const [fromDate, setFromDate] = useState<string>('')
   const [toDate, setToDate] = useState<string>('')
-  const [formData, setFormData] = useState<GreenevilleBJJObject>({
-    firstName: '',
-    lastName: '',
-    birthday: new Date(),
-    email: '',
-    phone: '',
-    hasSignedWaiver: false
-  })
+
   const [manualCheckinForm, setManualCheckinForm] = useState({
     belt: BeltColor.WHITE,
     stripes: 0,
@@ -101,12 +128,22 @@ export const UserEdit = () => {
       setCheckinsAtCurrentRank(currentUser.checkinsAtRank)
 
       setUser(currentUser)
-      setFormData(currentUser)
+      reset({
+        firstName: currentUser.firstName,
+        lastName: currentUser.lastName,
+        gender: currentUser.gender,
+        email: currentUser.email,
+        phone: currentUser.phone,
+        birthday: new Date(currentUser.birthday),
+        hasSignedWaiver: currentUser.hasSignedWaiver
+      })
+
       setManualCheckinForm((prev) => ({
         ...prev,
         belt: currentUser.rank.belt,
         stripes: currentUser.rank.stripes
       }))
+
       const checks = await fetchCheckinsByUser(id)
       setAllCheckins(checks)
     })()
@@ -124,14 +161,12 @@ export const UserEdit = () => {
     setAllCheckins(filtered)
   }
 
-  const handleSubmit = async () => {
+  const onSubmit = async (data: FormValues) => {
     if (!id || !user) return
     const transformedData = {
-      ...formData,
-      birthday: dayjs(formData.birthday).toISOString()
+      ...data,
+      birthday: dayjs(data.birthday).toISOString()
     }
-
-    delete transformedData.rank
 
     await updateUser(id, transformedData)
 
@@ -166,79 +201,161 @@ export const UserEdit = () => {
         <Typography variant="h4" align="center" gutterBottom>
           Edit Member
         </Typography>
-
-        <Grid>
-          <Typography variant="h6" gutterBottom>
-            Personal Info
-          </Typography>
-          <Stack spacing={2}>
-            <TextField
-              label="First Name"
-              value={formData.firstName}
-              onChange={(e) => setFormData((prev) => ({ ...prev, firstName: e.target.value }))}
-              fullWidth
-            />
-            <TextField
-              label="Last Name"
-              value={formData.lastName}
-              onChange={(e) => setFormData((prev) => ({ ...prev, lastName: e.target.value }))}
-              fullWidth
-            />
-            <TextField
-              label="Email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-              fullWidth
-            />
-            <TextField
-              label="Phone"
-              type="tel"
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, phone: formatPhoneNumber(e.target.value) }))
-              }
-              fullWidth
-            />
-            <DatePicker
-              label="Birthday"
-              value={dayjs(formData.birthday)}
-              onChange={(value) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  birthday: value?.toDate() || new Date()
-                }))
-              }}
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.hasSignedWaiver}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, hasSignedWaiver: e.target.checked }))
-                  }
+        <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
+          <Grid>
+            <Typography variant="h6" gutterBottom>
+              Personal Info
+            </Typography>
+            <Stack spacing={2}>
+              <Box display="flex" gap={3}>
+                <Controller
+                  name="firstName"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="First Name"
+                      variant="outlined"
+                      margin="normal"
+                      required
+                      fullWidth
+                      error={!!errors.firstName}
+                      helperText={errors.firstName?.message || ' '}
+                    />
+                  )}
                 />
-              }
-              label="Signed Waiver"
-            />
+
+                <Controller
+                  name="lastName"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Last Name"
+                      variant="outlined"
+                      margin="normal"
+                      required
+                      fullWidth
+                      error={!!errors.lastName}
+                      helperText={errors.lastName?.message || ' '}
+                    />
+                  )}
+                />
+              </Box>
+              <Controller
+                name="gender"
+                control={control}
+                render={({ field }) => (
+                  <FormControl component="fieldset" error={!!errors.gender} sx={{ my: 2 }}>
+                    <FormLabel component="legend">Gender</FormLabel>
+                    <RadioGroup row {...field}>
+                      <FormControlLabel value="male" control={<Radio />} label="Male" />
+                      <FormControlLabel value="female" control={<Radio />} label="Female" />
+                    </RadioGroup>
+                    <FormHelperText>{errors.gender?.message}</FormHelperText>
+                  </FormControl>
+                )}
+              />
+
+              <Controller
+                name="email"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Email"
+                    type="email"
+                    variant="outlined"
+                    margin="normal"
+                    required
+                    fullWidth
+                    error={!!errors.email}
+                    helperText={errors.email?.message || ' '}
+                  />
+                )}
+              />
+
+              <Controller
+                name="phone"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Phone Number"
+                    type="tel"
+                    variant="outlined"
+                    margin="normal"
+                    required
+                    fullWidth
+                    value={field.value}
+                    onChange={(e) => field.onChange(formatPhoneNumber(e.target.value))}
+                    error={!!errors.phone}
+                    helperText={errors.phone?.message || ' '}
+                  />
+                )}
+              />
+              <Controller
+                name="birthday"
+                control={control}
+                render={({ field }) => (
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      label="Birthday"
+                      value={dayjs(field.value)}
+                      onChange={(d) => {
+                        if (d?.isValid()) {
+                          field.onChange(d.toDate())
+                        }
+                      }}
+                      slotProps={{
+                        textField: {
+                          margin: 'normal',
+                          required: true,
+                          fullWidth: true,
+                          error: !!errors.birthday,
+                          helperText: errors.birthday?.message || ' '
+                        }
+                      }}
+                    />
+                  </LocalizationProvider>
+                )}
+              />
+
+              <Controller
+                name="hasSignedWaiver"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    sx={{ my: 2 }}
+                    control={
+                      <Switch
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                    }
+                    label="Signed Waiver"
+                  />
+                )}
+              />
+            </Stack>
+          </Grid>
+
+          <Stack direction="row" spacing={3} sx={{ mt: 3 }}>
+            <Button
+              color="error"
+              variant="contained"
+              fullWidth
+              sx={{ mt: 3 }}
+              onClick={() => setConfirmDeleteOpen(true)}
+            >
+              Delete User
+            </Button>
+
+            <Button type="submit" variant="contained" fullWidth sx={{ mt: 3 }}>
+              Save Changes
+            </Button>
           </Stack>
-        </Grid>
-
-        <Stack direction="row" spacing={3} sx={{ mt: 3 }}>
-          <Button
-            color="error"
-            variant="contained"
-            fullWidth
-            sx={{ mt: 3 }}
-            onClick={() => setConfirmDeleteOpen(true)}
-          >
-            Delete User
-          </Button>
-          <Button variant="contained" fullWidth sx={{ mt: 3 }} onClick={handleSubmit}>
-            Save Changes
-          </Button>
-        </Stack>
-
+        </Box>
         <Paper sx={{ mt: 4, p: 2 }}>
           <Stack
             direction="row"
@@ -434,7 +551,7 @@ export const UserEdit = () => {
                   setManualCheckinForm((prev) => ({ ...prev, belt: e.target.value }))
                 }
               >
-                {adultOrChildBelt(dayjs(formData.birthday).toDate()).map((belt, index) => (
+                {adultOrChildBelt(dayjs(watchedBirthday).toDate()).map((belt, index) => (
                   <MenuItem key={index} value={belt}>
                     <BeltIcon belt={belt} />
                   </MenuItem>

@@ -1,5 +1,4 @@
-// CreateEmergencyContactDialog.tsx
-import { useState } from 'react'
+import { useEffect } from 'react'
 import {
   Dialog,
   DialogTitle,
@@ -9,10 +8,15 @@ import {
   TextField,
   FormControlLabel,
   Switch,
-  Box
+  Box,
+  Theme
 } from '@mui/material'
+import styled from '@emotion/styled'
 import { EmergencyContact } from '@renderer/types/users.types'
 import { formatPhoneNumber } from '@renderer/helpers/strings.helper'
+import { joiResolver } from '@hookform/resolvers/joi'
+import { Controller, useForm } from 'react-hook-form'
+import { formSchema } from './emergency.contact.logic'
 
 interface Props {
   open: boolean
@@ -22,101 +26,213 @@ interface Props {
   onSave: (data: Omit<EmergencyContact, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>
 }
 
-export function CreateEmergencyContactDialog({ open, userId, contact, onClose, onSave }: Props) {
-  const [name, setName] = useState(contact?.name || '')
-  const [email, setEmail] = useState(contact?.email || '')
-  const [phone, setPhone] = useState(contact?.phone || '')
-  const [relationship, setRelationship] = useState(contact?.relationship || '')
-  const [isParentOrGuardian, setIsParentOrGuardian] = useState(contact?.isParentOrGuardian || false)
-  const [isPrimaryContact, setIsPrimaryContact] = useState(contact?.isPrimaryContact || false)
-  const [saving, setSaving] = useState(false)
+type FormValues = {
+  name: string
+  email: string
+  phone: string
+  relationship: string
+  isParentOrGuardian: boolean
+  isPrimaryContact: boolean
+}
 
-  const handleSubmit = async () => {
-    setSaving(true)
+// Styled Components
+const StyledDialogTitle = styled(DialogTitle)<{ theme?: Theme }>`
+  background-color: ${({ theme }) => theme.palette.primary.main};
+  color: ${({ theme }) => theme.palette.primary.contrastText};
+  text-align: center;
+  padding: ${({ theme }) => theme.spacing(3)};
+`
+
+const StyledDialogContent = styled(DialogContent)<{ theme?: Theme }>`
+  padding: ${({ theme }) => theme.spacing(4)};
+`
+
+const FieldGrid = styled(Box)<{ theme?: Theme }>`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: ${({ theme }) => theme.spacing(2)};
+  & .fullWidth {
+    grid-column: span 2;
+  }
+  margin-top: ${({ theme }) => theme.spacing(1)};
+`
+
+const StyledDialogActions = styled(DialogActions)<{ theme?: Theme }>`
+  padding: ${({ theme }) => theme.spacing(3)};
+  justify-content: space-between;
+`
+
+export function CreateEmergencyContactDialog({ open, userId, contact, onClose, onSave }: Props) {
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset
+  } = useForm<FormValues>({
+    resolver: joiResolver(formSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      relationship: '',
+      isParentOrGuardian: false,
+      isPrimaryContact: false
+    }
+  })
+
+  useEffect(() => {
+    if (contact) {
+      reset({
+        name: contact.name,
+        email: contact.email,
+        phone: contact.phone,
+        relationship: contact.relationship,
+        isParentOrGuardian: contact.isParentOrGuardian,
+        isPrimaryContact: contact.isPrimaryContact
+      })
+    }
+  }, [contact, reset])
+
+  const onSubmit = async (data: FormValues) => {
     try {
       await onSave({
-        name,
-        email,
-        phone,
-        relationship,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        relationship: data.relationship,
         userId,
-        isParentOrGuardian,
-        isPrimaryContact
+        isParentOrGuardian: data.isParentOrGuardian,
+        isPrimaryContact: data.isPrimaryContact
       })
       onClose()
-
-      setName('')
-      setEmail('')
-      setPhone('')
-      setRelationship('')
-      setIsParentOrGuardian(false)
-    } finally {
-      setSaving(false)
+      reset({
+        name: '',
+        email: '',
+        phone: '',
+        relationship: '',
+        isParentOrGuardian: false,
+        isPrimaryContact: false
+      })
+    } catch (error) {
+      console.error('Error saving emergency contact:', error)
     }
   }
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>New Emergency Contact</DialogTitle>
-      <DialogContent>
-        <Box component="form" noValidate sx={{ display: 'grid', gap: 2, mt: 1 }}>
-          <TextField
-            label="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            fullWidth
-          />
-          <TextField
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            fullWidth
-          />
-          <TextField
-            label="Phone"
-            value={phone}
-            onChange={(e) => setPhone(formatPhoneNumber(e.target.value))}
-            required
-            fullWidth
-          />
-          <TextField
-            label="Relationship"
-            value={relationship}
-            onChange={(e) => setRelationship(e.target.value)}
-            required
-            fullWidth
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={isParentOrGuardian}
-                onChange={(e) => setIsParentOrGuardian(e.target.checked)}
-              />
-            }
-            label="Is Parent / Guardian"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={isPrimaryContact}
-                onChange={(e) => setIsPrimaryContact(e.target.checked)}
-              />
-            }
-            label="Primary Contact"
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions sx={{ width: '100%', justifyContent: 'space-between' }}>
-        <Button onClick={onClose} disabled={saving}>
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={saving}>
-          {saving ? 'Saving…' : 'Save'}
-        </Button>
-      </DialogActions>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <StyledDialogTitle>
+          {contact ? 'Edit Emergency Contact' : 'New Emergency Contact'}
+        </StyledDialogTitle>
+        <StyledDialogContent>
+          <FieldGrid>
+            <Controller
+              name="name"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  className="fullWidth"
+                  label="Name"
+                  variant="outlined"
+                  required
+                  error={!!errors.name}
+                  helperText={errors.name?.message || ' '}
+                />
+              )}
+            />
+            <Controller
+              name="email"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  className="fullWidth"
+                  label="Email"
+                  type="email"
+                  variant="outlined"
+                  required
+                  error={!!errors.email}
+                  helperText={errors.email?.message || ' '}
+                />
+              )}
+            />
+            <Controller
+              name="phone"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  className="fullWidth"
+                  label="Phone Number"
+                  type="tel"
+                  variant="outlined"
+                  required
+                  value={field.value}
+                  onChange={(e) => field.onChange(formatPhoneNumber(e.target.value))}
+                  error={!!errors.phone}
+                  helperText={errors.phone?.message || ' '}
+                />
+              )}
+            />
+            <Controller
+              name="relationship"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  className="fullWidth"
+                  label="Relationship"
+                  variant="outlined"
+                  required
+                  error={!!errors.relationship}
+                  helperText={errors.relationship?.message || ' '}
+                />
+              )}
+            />
+            <Controller
+              name="isParentOrGuardian"
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  className="fullWidth"
+                  control={
+                    <Switch
+                      checked={field.value}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                    />
+                  }
+                  label="Is Parent / Guardian"
+                />
+              )}
+            />
+            <Controller
+              name="isPrimaryContact"
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  className="fullWidth"
+                  control={
+                    <Switch
+                      checked={field.value}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                    />
+                  }
+                  label="Primary Contact?"
+                />
+              )}
+            />
+          </FieldGrid>
+        </StyledDialogContent>
+        <StyledDialogActions>
+          <Button onClick={onClose} variant="outlined" fullWidth>
+            Cancel
+          </Button>
+          <Button type="submit" variant="contained" fullWidth>
+            Save
+          </Button>
+        </StyledDialogActions>
+      </form>
     </Dialog>
   )
 }

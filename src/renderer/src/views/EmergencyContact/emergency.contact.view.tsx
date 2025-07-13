@@ -1,6 +1,6 @@
-// EmergencyContactsTable.tsx
 import React, { useState, useEffect, useRef } from 'react'
 import {
+  Container,
   Paper,
   TableContainer,
   Table,
@@ -8,18 +8,18 @@ import {
   TableRow,
   TableCell,
   TableBody,
-  TablePagination,
   Button,
-  Container,
   IconButton,
-  Box,
   Dialog,
-  DialogActions,
+  DialogTitle,
   DialogContent,
   DialogContentText,
-  DialogTitle,
-  Typography
+  DialogActions,
+  Typography,
+  Box,
+  Theme
 } from '@mui/material'
+import styled from '@emotion/styled'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ModeEditIcon from '@mui/icons-material/ModeEdit'
 import CheckBoxIcon from '@mui/icons-material/CheckBox'
@@ -30,10 +30,47 @@ import { CreateEmergencyContactDialog } from './emergency.contact.dialog'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useDB } from '@renderer/context/db.context'
 import { v4 as uuid } from 'uuid'
+import { theme } from '@renderer/App'
+import { StyledPagination } from '../Members/members.view'
+
+// Styled Components
+const StyledContainer = styled(Container)<{ theme: Theme }>`
+  padding-top: ${({ theme }) => theme.spacing(4)};
+`
+
+const StyledPaper = styled(Paper)<{ theme: Theme }>`
+  position: relative;
+  background: ${({ theme }) => theme.palette.background.paper};
+`
+
+export const HeaderBar = styled(Box)<{ theme: Theme }>`
+  display: flex;
+  justify-content: space-between;
+  padding-top: ${({ theme }) => theme.spacing(2)};
+  margin: ${({ theme }) => theme.spacing(2)};
+`
+
+const StyledTableContainer = styled(TableContainer)`
+  max-height: 300px;
+  overflow: auto;
+`
+
+const ConfirmDialogContent = styled(DialogContent)<{ theme: Theme }>`
+  padding: ${({ theme }) => theme.spacing(4)};
+`
+
+const ConfirmDialogActions = styled(DialogActions)<{ theme: Theme }>`
+  padding: ${({ theme }) => theme.spacing(2)};
+`
+
+const ConfirmActionsBox = styled(Box)`
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+`
 
 function useContactApi() {
   const { emergencyContact: apiEmergencyContact } = useDB()
-
   const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([])
 
   const fetchEmergencyContacts = async (userId: string) => {
@@ -42,24 +79,21 @@ function useContactApi() {
         setEmergencyContacts([])
         return []
       }
-
       const docs = await apiEmergencyContact
         .find()
         .where('userId')
         .eq(userId)
         .sort({ isPrimaryContact: 'desc' })
         .exec()
-
-      const data = docs ? docs : []
-
-      setEmergencyContacts(data)
-      return data
+      setEmergencyContacts(docs || [])
+      return docs || []
     } catch (err) {
       console.error(err)
       setEmergencyContacts([])
       return []
     }
   }
+
   const createEmergencyContacts = async (
     userId: string,
     emergencyContact: Partial<EmergencyContact>
@@ -72,7 +106,6 @@ function useContactApi() {
 
   const deleteEmergencyContactById = async (contactId: string) => {
     if (!apiEmergencyContact) return
-
     const doc = await apiEmergencyContact.findOne(contactId).exec()
     if (!doc) throw new Error('Emergency Contact not found')
     await doc.remove()
@@ -81,15 +114,11 @@ function useContactApi() {
 
   const editEmergencyContact = async (contactId: string, data: Partial<EmergencyContact>) => {
     try {
-      if (!apiEmergencyContact) {
-        return
-      }
-
+      if (!apiEmergencyContact) return
       const doc = await apiEmergencyContact.findOne(contactId).exec()
       if (!doc) throw new Error('User not found')
       const updatedData = { ...doc.toJSON(), ...data }
       await apiEmergencyContact.upsert(updatedData as any)
-
       return doc.toJSON()
     } catch (error) {
       console.error(error)
@@ -107,7 +136,6 @@ function useContactApi() {
 
 const EmergencyContactsView = () => {
   const { id } = useParams()
-
   const {
     createEmergencyContacts,
     fetchEmergencyContacts,
@@ -115,6 +143,7 @@ const EmergencyContactsView = () => {
     editEmergencyContact,
     emergencyContacts
   } = useContactApi()
+
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -123,21 +152,17 @@ const EmergencyContactsView = () => {
 
   const editingContactRef = useRef<EmergencyContact | null>(null)
   const deletingContactRef = useRef<string | null>(null)
-
   const navigate = useNavigate()
 
   useEffect(() => {
     if (!id) return
-    const init = async () => {
+    ;(async () => {
       await fetchEmergencyContacts(id)
-    }
-    init()
-    setLoading(false)
+      setLoading(false)
+    })()
   }, [id])
 
-  const handleChangePage = (_: any, newPage: number) => {
-    setPage(newPage)
-  }
+  const handleChangePage = (_: any, newPage: number) => setPage(newPage)
   const handleChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(e.target.value, 10))
     setPage(0)
@@ -145,32 +170,25 @@ const EmergencyContactsView = () => {
 
   const paginated = emergencyContacts.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
-  const handleGoBack = () => navigate('/members')
-
-  if (loading) {
-    return <div>LOADING</div>
-  }
+  if (loading) return <Typography>Loading...</Typography>
 
   return (
-    <Container>
-      <Paper sx={{ mt: 4, p: 2, position: 'relative' }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            width: '100%',
-            marginBottom: '10px'
-          }}
-        >
-          <Button onClick={handleGoBack} variant="outlined" startIcon={<ArrowBackIcon />}>
+    <StyledContainer theme={theme}>
+      <StyledPaper theme={theme}>
+        <HeaderBar theme={theme}>
+          <Button
+            onClick={() => navigate('/members')}
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+          >
             Go Back
           </Button>
           <Button variant="contained" onClick={() => setDialogOpen(true)}>
             Add Emergency Contact
           </Button>
-        </div>
+        </HeaderBar>
 
-        <TableContainer sx={{ maxHeight: 300, overflow: 'auto' }}>
+        <StyledTableContainer>
           <Table stickyHeader>
             <TableHead>
               <TableRow>
@@ -180,32 +198,16 @@ const EmergencyContactsView = () => {
                 <TableCell>Relationship</TableCell>
                 <TableCell>Guardian?</TableCell>
                 <TableCell>Created</TableCell>
-                <TableCell align="right">
-                  <IconButton onClick={() => console.log('Edit Clicked')} color="primary">
-                    <ModeEditIcon />
-                  </IconButton>
-                  <IconButton onClick={() => console.log('Delete clicked')} color="error">
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {paginated.map((c) => (
-                <TableRow key={c.id}>
+                <TableRow key={c.id} hover>
                   <TableCell>
-                    <Box
-                      component="span"
-                      sx={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 0.25
-                      }}
-                    >
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
                       {c.isPrimaryContact && <CheckBoxIcon fontSize="small" color="error" />}
-                      <Typography variant="body2" component="span">
-                        {c.name}
-                      </Typography>
+                      <Typography variant="body2">{c.name}</Typography>
                     </Box>
                   </TableCell>
                   <TableCell>{c.email}</TableCell>
@@ -215,7 +217,7 @@ const EmergencyContactsView = () => {
                   <TableCell>{dayjs(c.createdAt).format('MM/DD/YYYY')}</TableCell>
                   <TableCell align="right">
                     <IconButton
-                      onClick={async (e) => {
+                      onClick={(e) => {
                         e.stopPropagation()
                         if (!id) return
                         editingContactRef.current = c
@@ -226,7 +228,7 @@ const EmergencyContactsView = () => {
                       <ModeEditIcon />
                     </IconButton>
                     <IconButton
-                      onClick={async (e) => {
+                      onClick={(e) => {
                         e.stopPropagation()
                         if (!id) return
                         deletingContactRef.current = c.id
@@ -241,10 +243,10 @@ const EmergencyContactsView = () => {
               ))}
             </TableBody>
           </Table>
-        </TableContainer>
+        </StyledTableContainer>
 
-        <TablePagination
-          component="div"
+        <StyledPagination
+          theme={theme}
           count={emergencyContacts.length}
           page={page}
           rowsPerPage={rowsPerPage}
@@ -252,7 +254,7 @@ const EmergencyContactsView = () => {
           onRowsPerPageChange={handleChangeRowsPerPage}
           rowsPerPageOptions={[5, 10, 25]}
         />
-      </Paper>
+      </StyledPaper>
 
       {id && dialogOpen && (
         <CreateEmergencyContactDialog
@@ -275,17 +277,18 @@ const EmergencyContactsView = () => {
           userId={id}
         />
       )}
-      {id && confirmDeleteOpen && (
+
+      {id && (
         <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
-          <DialogTitle>Delete User</DialogTitle>
-          <DialogContent sx={{ p: 4 }}>
+          <DialogTitle>Delete Emergency Contact</DialogTitle>
+          <ConfirmDialogContent theme={theme}>
             <DialogContentText>
-              Deleting this emergency contact <strong>CANNOT</strong> be undone. <br /> Proceed with
+              Deleting this emergency contact <strong>cannot</strong> be undone. Proceed with
               caution.
             </DialogContentText>
-          </DialogContent>
-          <DialogActions sx={{ p: 2 }}>
-            <Box display="flex" justifyContent="space-between" width={'100%'}>
+          </ConfirmDialogContent>
+          <ConfirmDialogActions theme={theme}>
+            <ConfirmActionsBox>
               <Button
                 onClick={() => setConfirmDeleteOpen(false)}
                 variant="outlined"
@@ -305,11 +308,11 @@ const EmergencyContactsView = () => {
               >
                 Delete
               </Button>
-            </Box>
-          </DialogActions>
+            </ConfirmActionsBox>
+          </ConfirmDialogActions>
         </Dialog>
       )}
-    </Container>
+    </StyledContainer>
   )
 }
 
