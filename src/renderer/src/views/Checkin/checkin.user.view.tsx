@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Container, Paper, Typography, Alert, Stack } from '@mui/material'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Checkin, GreenevilleBJJUser } from '@renderer/types/users.types'
 import { useUserApi } from '@renderer/hooks/user.api'
 import { useCheckinApi } from '@renderer/hooks/checkin.api'
@@ -26,6 +26,8 @@ export const CheckInUser = () => {
     getNextCheckinTime,
     createCheckin
   } = useCheckinApi()
+
+  const navigate = useNavigate()
 
   const handleCheckIn = async (userToCheckin: GreenevilleBJJUser) => {
     const newCheckin = await createCheckin(
@@ -96,7 +98,7 @@ export const CheckInUser = () => {
 
     const timer = setTimeout(() => {
       if (!clickedRef.current) {
-        // navigate('/')
+        navigate('/')
       }
     }, 6000)
 

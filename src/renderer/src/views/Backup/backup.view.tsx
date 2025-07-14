@@ -18,12 +18,15 @@ import DownloadIcon from '@mui/icons-material/Download'
 import UploadIcon from '@mui/icons-material/Upload'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import { useDB } from '@renderer/context/db.context'
+import { useNavigate } from 'react-router'
 
 export const BackupView = () => {
   const { db } = useDB()
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importing, setImporting] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
+
+  const navigate = useNavigate()
 
   async function handleExport() {
     if (!db) return
@@ -54,6 +57,7 @@ export const BackupView = () => {
       const text = await importFile.text()
       const dump = JSON.parse(text)
       await db.importJSON(dump)
+      navigate('/members')
     } catch (err) {
       console.error('Import failed', err)
     } finally {
@@ -64,7 +68,7 @@ export const BackupView = () => {
   }
 
   return (
-    <Container maxWidth="sm">
+    <Container maxWidth="md">
       <Paper variant="outlined" sx={{ mt: 4, p: 3 }}>
         <Stack spacing={3}>
           <Typography variant="h4" align="center">
