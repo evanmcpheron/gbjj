@@ -17,13 +17,14 @@ import {
   FormControlLabel,
   TextField,
   Stack,
-  Theme
+  Theme,
+  TableSortLabel
 } from '@mui/material'
 import styled from '@emotion/styled'
 import CheckBoxIcon from '@mui/icons-material/CheckBox'
 import ErrorIcon from '@mui/icons-material/Error'
 import { BeltIcon } from '@renderer/components/belt/belt.component'
-import { GreenevilleBJJUser } from '@renderer/types/users.types'
+import { BELT_ORDER, GreenevilleBJJUser } from '@renderer/types/users.types'
 import { useUserApi } from '@renderer/hooks/user.api'
 import { useNavigate } from 'react-router-dom'
 import { adultFilter } from '@renderer/components/belt/all.belts.component'
@@ -62,6 +63,10 @@ export const StyledPagination = styled(TablePagination)<{ theme: Theme }>`
 `
 
 export default function Members() {
+  type SortColumn = 'name' | 'email' | 'rank' | 'promotedAt' | 'waiver'
+
+  const [sortBy, setSortBy] = useState<SortColumn>('name')
+  const [sortDirection, setDirection] = useState<'asc' | 'desc'>('asc')
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [filterMode, setFilterMode] = useState<'all' | 'adult' | 'female' | 'kids'>('all')
@@ -71,13 +76,49 @@ export default function Members() {
   const { fetchAllUsers, allUsers, isLoading } = useUserApi()
   const navigate = useNavigate()
 
+  const rankComparator = (a: GreenevilleBJJUser, b: GreenevilleBJJUser) => {
+    const ai = BELT_ORDER.indexOf(a.rank.belt)
+    const bi = BELT_ORDER.indexOf(b.rank.belt)
+    if (ai !== bi) {
+      return ai - bi
+    }
+    return a.rank.stripes - b.rank.stripes
+  }
+
+  const getComparator = (order: 'asc' | 'desc', column: SortColumn) => {
+    return (a: GreenevilleBJJUser, b: GreenevilleBJJUser) => {
+      let cmp = 0
+
+      if (column === 'rank') {
+        cmp = rankComparator(a, b)
+      } else if (column === 'name') {
+        const nameA = `${a.firstName} ${a.lastName}`
+        const nameB = `${b.firstName} ${b.lastName}`
+        cmp = nameA.localeCompare(nameB)
+      } else if (column === 'email') {
+        cmp = a.email.localeCompare(b.email)
+      } else if (column === 'promotedAt') {
+        cmp = dayjs(a.rank.promotedAt).isBefore(dayjs(b.rank.promotedAt))
+          ? -1
+          : dayjs(a.rank.promotedAt).isAfter(dayjs(b.rank.promotedAt))
+            ? 1
+            : 0
+      } else if (column === 'waiver') {
+        cmp = a.hasSignedWaiver === b.hasSignedWaiver ? 0 : a.hasSignedWaiver ? -1 : 1
+      } else {
+        cmp = 0
+      }
+
+      return order === 'asc' ? cmp : -cmp
+    }
+  }
+
   useEffect(() => {
     fetchAllUsers()
   }, [])
 
-  // Filter and search users
   useEffect(() => {
-    let users = [...allUsers]
+    let users = [...allUsers].sort(getComparator(sortDirection, sortBy))
     if (filterMode === 'adult') {
       users = users.filter((u) => adultFilter(dayjs(u.birthday).toDate()))
     } else if (filterMode === 'female') {
@@ -94,9 +135,10 @@ export default function Members() {
           u.phone.toLowerCase().includes(term)
       )
     }
+
     setFilteredUsers(users)
     setPage(0)
-  }, [allUsers, filterMode, searchTerm])
+  }, [allUsers, filterMode, searchTerm, sortBy, sortDirection])
 
   useEffect(() => setPage(0), [filteredUsers])
   useEffect(() => setFilteredUsers(allUsers), [allUsers])
@@ -111,7 +153,9 @@ export default function Members() {
     return <CircularProgress />
   }
 
-  const paginated = filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+  const paginated = filteredUsers
+    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+    .sort(getComparator(sortDirection, sortBy))
 
   return (
     <StyledContainer theme={theme}>
@@ -138,12 +182,60 @@ export default function Members() {
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell>Name</TableCell>
+                <TableCell align="center">
+                  <TableSortLabel
+                    active={sortBy === 'name'}
+                    direction={sortDirection}
+                    onClick={() => {
+                      const isAsc = sortBy === 'name' && sortDirection === 'asc'
+                      setSortBy('name')
+                      setDirection(isAsc ? 'desc' : 'asc')
+                    }}
+                  >
+                    Name
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell>Email</TableCell>
                 <TableCell align="center">Phone</TableCell>
-                <TableCell align="center">Signed Waiver</TableCell>
-                <TableCell align="center">Promotion Date</TableCell>
-                <TableCell align="center">Rank</TableCell>
+                <TableCell align="center">
+                  <TableSortLabel
+                    active={sortBy === 'waiver'}
+                    direction={sortDirection}
+                    onClick={() => {
+                      const isAsc = sortBy === 'waiver' && sortDirection === 'asc'
+                      setSortBy('waiver')
+                      setDirection(isAsc ? 'desc' : 'asc')
+                    }}
+                  >
+                    Signed Waiver
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell align="center">
+                  <TableSortLabel
+                    active={sortBy === 'promotedAt'}
+                    direction={sortDirection}
+                    onClick={() => {
+                      const isAsc = sortBy === 'promotedAt' && sortDirection === 'asc'
+                      setSortBy('promotedAt')
+                      setDirection(isAsc ? 'desc' : 'asc')
+                    }}
+                  >
+                    Promotion Date
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell align="center">
+                  <TableSortLabel
+                    active={sortBy === 'rank'}
+                    direction={sortDirection}
+                    onClick={() => {
+                      const isAsc = sortBy === 'rank' && sortDirection === 'asc'
+                      setSortBy('rank')
+                      setDirection(isAsc ? 'desc' : 'asc')
+                    }}
+                  >
+                    Rank
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell align="center">Edit</TableCell>
                 <TableCell align="center">Emergency Contact</TableCell>
               </TableRow>

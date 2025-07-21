@@ -19,6 +19,7 @@ import UploadIcon from '@mui/icons-material/Upload'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import { useDB } from '@renderer/context/db.context'
 import { useNavigate } from 'react-router'
+import dayjs from 'dayjs'
 
 export const BackupView = () => {
   const { db } = useDB()
@@ -37,7 +38,8 @@ export const BackupView = () => {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = 'backup_DO_NOT_DELETE.json'
+    const today = dayjs(new Date()).format('MM/DD/YYYY')
+    link.download = `${today}_backup_DO_NOT_DELETE.json`
     link.click()
     URL.revokeObjectURL(url)
   }

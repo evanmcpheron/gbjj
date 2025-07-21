@@ -33,14 +33,14 @@ export const RankDialog = ({ open, user, onClose, onSave }: RankDialogProps) => 
   const { createPromotion } = usePromotionApi()
   const [stripes, setStripes] = useState(user.rank.stripes || 0)
   const [belt, setBelt] = useState(user.rank.belt || BeltColor.WHITE)
-  const [promotionDate, setPromotionDate] = useState(new Date())
+  const [promotionDate, setPromotionDate] = useState<Date>(new Date())
 
   const handlePromotion = async () => {
     await createPromotion({
       userId: user.id,
       belt,
       stripes,
-      promotedAt: promotionDate.toISOString()
+      promotedAt: promotionDate?.toISOString() || new Date().toISOString()
     })
     onSave()
   }
@@ -57,7 +57,7 @@ export const RankDialog = ({ open, user, onClose, onSave }: RankDialogProps) => 
           <DateTimePicker
             sx={{ mb: 2 }}
             value={dayjs(promotionDate)}
-            onChange={(value) => setPromotionDate(() => value?.toDate() || new Date())}
+            onChange={(value) => setPromotionDate(dayjs(value).toDate())}
           />
 
           <FormLabel>Belt</FormLabel>

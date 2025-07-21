@@ -206,6 +206,44 @@ export const useUserApi = () => {
     [api, promotionApi]
   )
 
+  const fetchUserByPhone = useCallback(
+    async (phoneNumber: string): Promise<GreenevilleBJJUser | null> => {
+      if (!api) return null
+      const doc = await api.find().where('phone').eq(phoneNumber).exec()
+      if (!doc) return null
+      const base = doc?.[0]?.toMutableJSON()
+      if (!base) return null
+      const { id } = base
+      const promotions = await promotionApi.fetchPromotions({ userId: id })
+      const rank = (await promotionApi.getMostRecentPromotionByUserId(id)) ?? {
+        id: uuid(),
+        userId: id,
+        belt: BeltColor.WHITE,
+        stripes: 0,
+        promotedAt: '',
+        createdAt: '',
+        updatedAt: ''
+      }
+
+      const { allCheckins, thisMonthCheckins, lastMonthCheckins } =
+        await checkinApi.fetchBasicCheckinData(id)
+
+      const user: GreenevilleBJJUser = {
+        ...base,
+        promotions,
+        checkins: allCheckins,
+        rank,
+        checkinsAtRank: allCheckins.filter(
+          (checkin) => checkin.belt === rank.belt && checkin.stripes === rank.stripes
+        ),
+        checkinsLastMonth: lastMonthCheckins,
+        checkinsThisMonth: thisMonthCheckins
+      }
+      return user
+    },
+    [api, promotionApi]
+  )
+
   /** Create a new user */
   const createUser = useCallback(
     async (
@@ -282,6 +320,7 @@ export const useUserApi = () => {
       setUserLookup(u)
       return u
     }),
+    fetchUserByPhone: withLoading(fetchUserByPhone),
     createUser: withLoading(createUser),
     updateUser: withLoading(updateUser),
     deleteUser: withLoading(deleteUser)

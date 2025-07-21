@@ -181,12 +181,12 @@ export const useCheckinApi = () => {
     timeUntilNextCheckin: withLoading(async (userId: string) => {
       const last = await fetchLastCheckin(userId)
       const elapsed = Date.now() - Date.parse(last?.checkedAt ?? '0')
-      const windowMs = 12 * 60 * 60 * 1000
+      const windowMs = 7 * 60 * 60 * 1000
       return elapsed >= windowMs ? 0 : windowMs - elapsed
     }),
     getNextCheckinTime: withLoading(async (userId: string) => {
       const last = await fetchLastCheckin(userId)
-      const nextTs = Math.max(Date.now(), Date.parse(last?.checkedAt ?? '0') + 12 * 60 * 60 * 1000)
+      const nextTs = Math.max(Date.now(), Date.parse(last?.checkedAt ?? '0') + 7 * 60 * 60 * 1000)
       return dayjs(nextTs).format('M/D/YYYY h:mm A')
     })
   }

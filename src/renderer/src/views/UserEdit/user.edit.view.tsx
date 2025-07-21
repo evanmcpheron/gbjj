@@ -594,7 +594,7 @@ export const UserEdit = () => {
                 onChange={(value) =>
                   setManualCheckinForm((prev) => ({
                     ...prev,
-                    checkedAt: value?.toDate() || new Date()
+                    checkedAt: dayjs(value).toDate()
                   }))
                 }
               />
@@ -659,7 +659,7 @@ export const UserEdit = () => {
             </Button>
             <Button
               onClick={async () => {
-                deleteUser(id!)
+                await deleteUser(id!)
                 navigate('/members')
                 setConfirmDeleteOpen(false)
               }}

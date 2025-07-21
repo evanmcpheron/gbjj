@@ -21,6 +21,30 @@ export enum BeltColor {
   RED = 'RED'
 }
 
+// in your Members.tsx (or a shared constants file)
+export const BELT_ORDER = [
+  BeltColor.WHITE,
+  BeltColor.GREY_WHITE,
+  BeltColor.GREY,
+  BeltColor.GREY_BLACK,
+  BeltColor.YELLOW_WHITE,
+  BeltColor.YELLOW,
+  BeltColor.YELLOW_BLACK,
+  BeltColor.ORANGE_WHITE,
+  BeltColor.ORANGE,
+  BeltColor.ORANGE_BLACK,
+  BeltColor.GREEN_WHITE,
+  BeltColor.GREEN,
+  BeltColor.GREEN_BLACK,
+  BeltColor.BLUE,
+  BeltColor.PURPLE,
+  BeltColor.BROWN,
+  BeltColor.BLACK,
+  BeltColor.RED_BLACK,
+  BeltColor.RED_WHITE,
+  BeltColor.RED
+] as const
+
 export interface EmergencyContact {
   id: string
   name: string
