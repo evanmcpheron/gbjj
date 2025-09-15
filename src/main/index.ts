@@ -76,7 +76,7 @@ app.whenReady().then(() => {
   createWindow()
 
   // toggleDevTools will open it if closed, and close if open
-  mainWindow.webContents.toggleDevTools()
+  // mainWindow.webContents.toggleDevTools()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

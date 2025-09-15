@@ -32,6 +32,7 @@ export const BackupView = () => {
   async function handleExport() {
     if (!db) return
     const dump = await db.exportJSON()
+
     const blob = new Blob([JSON.stringify(dump, null, 2)], {
       type: 'application/json'
     })
@@ -57,7 +58,9 @@ export const BackupView = () => {
       )
 
       const text = await importFile.text()
+
       const dump = JSON.parse(text)
+
       await db.importJSON(dump)
       navigate('/members')
     } catch (err) {
@@ -107,6 +110,9 @@ export const BackupView = () => {
           >
             <Typography variant="h6" gutterBottom>
               Restore Backup
+            </Typography>
+            <Typography variant="h6">
+              Backup from {dayjs(importFile?.lastModified).format('MM/DD/YYYY hh:mm a')}
             </Typography>
             <Typography variant="body2" color="text.secondary" gutterBottom>
               Select a backup file to wipe and restore your database. This will overwrite all
